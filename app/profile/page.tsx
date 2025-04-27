@@ -10,10 +10,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { FileUpload } from "@/components/ui/file-upload"
 import { Camera, Mail, Phone, MapPin, Building, User } from "lucide-react"
 
 export default function Profile() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [profileImage, setProfileImage] = useState<File | null>(null)
+
+  const handleProfileImageSelect = (file: File) => {
+    setProfileImage(file)
+    // Here you would typically upload the file to your server
+    // and update the user's profile picture
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -34,13 +42,20 @@ export default function Profile() {
                 <CardContent className="p-6">
                   <div className="flex flex-col items-center">
                     <Avatar className="h-24 w-24 mb-4">
-                      <AvatarImage src="/avatars/01.png" />
+                      {profileImage ? (
+                        <AvatarImage src={URL.createObjectURL(profileImage)} />
+                      ) : (
+                        <AvatarImage src="/avatars/01.png" />
+                      )}
                       <AvatarFallback>JD</AvatarFallback>
                     </Avatar>
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <Camera className="h-4 w-4" />
-                      Change Photo
-                    </Button>
+                    <FileUpload
+                      onFileSelect={handleProfileImageSelect}
+                      maxSize={2 * 1024 * 1024} // 2MB
+                      accept={["image/*"]}
+                      label="Profile Photo"
+                      description="Click to upload or drag and drop"
+                    />
                   </div>
                 </CardContent>
               </Card>

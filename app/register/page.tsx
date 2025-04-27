@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FileUpload } from "@/components/ui/file-upload"
 import { PenToolIcon as Tool, ArrowLeft, CheckCircle2, User, Building2, Landmark } from "lucide-react"
 
 export default function Register() {
@@ -19,6 +20,31 @@ export default function Register() {
   const [userType, setUserType] = useState("citizen")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [profileImage, setProfileImage] = useState<File | null>(null)
+  const [licenseDoc, setLicenseDoc] = useState<File | null>(null)
+  const [portfolio, setPortfolio] = useState<File | null>(null)
+  const [idCard, setIdCard] = useState<File | null>(null)
+  const [authorization, setAuthorization] = useState<File | null>(null)
+
+  const handleProfileImageSelect = (file: File) => {
+    setProfileImage(file)
+  }
+
+  const handleLicenseDocSelect = (file: File) => {
+    setLicenseDoc(file)
+  }
+
+  const handlePortfolioSelect = (file: File) => {
+    setPortfolio(file)
+  }
+
+  const handleIdCardSelect = (file: File) => {
+    setIdCard(file)
+  }
+
+  const handleAuthorizationSelect = (file: File) => {
+    setAuthorization(file)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -228,54 +254,38 @@ export default function Register() {
                     transition={{ duration: 0.3 }}
                     className="space-y-4"
                   >
-                    <h3 className="font-medium text-lg text-gray-800 mb-2">Verification</h3>
-
                     {userType === "citizen" && (
-                      <>
-                        <div className="space-y-2">
-                          <Label htmlFor="verification-code">Verification Code</Label>
-                          <Input id="verification-code" placeholder="Enter code sent to your email/phone" />
-                          <p className="text-xs text-gray-500 mt-1">
-                            We've sent a verification code to your email and phone
-                          </p>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="profile-photo">Profile Photo (Optional)</Label>
-                          <div className="border-2 border-dashed border-gray-200 rounded-md p-4 text-center">
-                            <div className="flex flex-col items-center">
-                              <User className="h-10 w-10 text-gray-400 mb-2" />
-                              <span className="text-sm text-gray-500">Click to upload or drag and drop</span>
-                              <span className="text-xs text-gray-400 mt-1">SVG, PNG, JPG (max. 2MB)</span>
-                            </div>
-                            <Input id="profile-photo" type="file" className="hidden" />
-                          </div>
-                        </div>
-                      </>
+                      <div className="space-y-2">
+                        <FileUpload
+                          onFileSelect={handleProfileImageSelect}
+                          maxSize={2 * 1024 * 1024} // 2MB
+                          accept={["image/*"]}
+                          label="Profile Photo (Optional)"
+                          description="Click to upload or drag and drop"
+                        />
+                      </div>
                     )}
 
                     {userType === "contractor" && (
                       <>
                         <div className="space-y-2">
-                          <Label htmlFor="license-doc">Business License Document</Label>
-                          <div className="border-2 border-dashed border-gray-200 rounded-md p-4 text-center">
-                            <div className="flex flex-col items-center">
-                              <span className="text-sm text-gray-500">Click to upload or drag and drop</span>
-                              <span className="text-xs text-gray-400 mt-1">PDF, PNG, JPG (max. 5MB)</span>
-                            </div>
-                            <Input id="license-doc" type="file" className="hidden" />
-                          </div>
+                          <FileUpload
+                            onFileSelect={handleLicenseDocSelect}
+                            maxSize={5 * 1024 * 1024} // 5MB
+                            accept={["application/pdf", "image/*"]}
+                            label="Business License Document"
+                            description="Click to upload or drag and drop"
+                          />
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="portfolio">Past Work Portfolio (Optional)</Label>
-                          <div className="border-2 border-dashed border-gray-200 rounded-md p-4 text-center">
-                            <div className="flex flex-col items-center">
-                              <span className="text-sm text-gray-500">Click to upload or drag and drop</span>
-                              <span className="text-xs text-gray-400 mt-1">PDF, PNG, JPG (max. 10MB)</span>
-                            </div>
-                            <Input id="portfolio" type="file" className="hidden" />
-                          </div>
+                          <FileUpload
+                            onFileSelect={handlePortfolioSelect}
+                            maxSize={10 * 1024 * 1024} // 10MB
+                            accept={["application/pdf", "image/*"]}
+                            label="Past Work Portfolio (Optional)"
+                            description="Click to upload or drag and drop"
+                          />
                         </div>
                       </>
                     )}
@@ -283,25 +293,23 @@ export default function Register() {
                     {userType === "official" && (
                       <>
                         <div className="space-y-2">
-                          <Label htmlFor="id-card">Government ID Card</Label>
-                          <div className="border-2 border-dashed border-gray-200 rounded-md p-4 text-center">
-                            <div className="flex flex-col items-center">
-                              <span className="text-sm text-gray-500">Click to upload or drag and drop</span>
-                              <span className="text-xs text-gray-400 mt-1">PDF, PNG, JPG (max. 5MB)</span>
-                            </div>
-                            <Input id="id-card" type="file" className="hidden" />
-                          </div>
+                          <FileUpload
+                            onFileSelect={handleIdCardSelect}
+                            maxSize={5 * 1024 * 1024} // 5MB
+                            accept={["application/pdf", "image/*"]}
+                            label="Government ID Card"
+                            description="Click to upload or drag and drop"
+                          />
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="authorization">Authorization Letter</Label>
-                          <div className="border-2 border-dashed border-gray-200 rounded-md p-4 text-center">
-                            <div className="flex flex-col items-center">
-                              <span className="text-sm text-gray-500">Click to upload or drag and drop</span>
-                              <span className="text-xs text-gray-400 mt-1">PDF (max. 5MB)</span>
-                            </div>
-                            <Input id="authorization" type="file" className="hidden" />
-                          </div>
+                          <FileUpload
+                            onFileSelect={handleAuthorizationSelect}
+                            maxSize={5 * 1024 * 1024} // 5MB
+                            accept={["application/pdf"]}
+                            label="Authorization Letter"
+                            description="Click to upload or drag and drop"
+                          />
                         </div>
                       </>
                     )}
