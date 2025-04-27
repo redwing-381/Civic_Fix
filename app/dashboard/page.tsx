@@ -12,10 +12,13 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { IssueCard } from "@/components/issue-card"
 import { StatCard } from "@/components/stat-card"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 export default function Dashboard() {
   const isMobile = useMobile()
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
+  const searchParams = useSearchParams()
+  const defaultTab = searchParams.get("tab") || "recent"
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -55,9 +58,10 @@ export default function Dashboard() {
             />
           </div>
 
-          <Tabs defaultValue="recent" className="mb-6">
+          <Tabs defaultValue={defaultTab} className="mb-6">
             <TabsList>
               <TabsTrigger value="recent">Recent Issues</TabsTrigger>
+              <TabsTrigger value="my-reports">My Reports</TabsTrigger>
               <TabsTrigger value="urgent">Urgent</TabsTrigger>
               <TabsTrigger value="nearby">Nearby</TabsTrigger>
               <TabsTrigger value="following">Following</TabsTrigger>
@@ -118,6 +122,38 @@ export default function Dashboard() {
                   daysAgo={4}
                   progress={60}
                   id="6"
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="my-reports" className="mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <IssueCard
+                  title="Broken Water Main"
+                  description="Water leaking onto the street causing traffic hazards"
+                  location="123 Main St, Downtown"
+                  status="in-progress"
+                  daysAgo={2}
+                  progress={45}
+                  id="1"
+                />
+                <IssueCard
+                  title="Pothole Damage"
+                  description="Large pothole causing vehicle damage"
+                  location="456 Oak Ave, Westside"
+                  status="pending"
+                  daysAgo={5}
+                  progress={10}
+                  id="2"
+                />
+                <IssueCard
+                  title="Fallen Tree"
+                  description="Tree blocking sidewalk after storm"
+                  location="789 Pine St, Northside"
+                  status="completed"
+                  daysAgo={7}
+                  progress={100}
+                  id="3"
                 />
               </div>
             </TabsContent>

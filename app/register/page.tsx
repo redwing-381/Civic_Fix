@@ -90,7 +90,7 @@ export default function Register() {
                     transition={{ duration: 0.3 }}
                   >
                     <Tabs defaultValue="citizen" onValueChange={(value) => setUserType(value)} className="w-full">
-                      <TabsList className="grid grid-cols-3 mb-6">
+                      <TabsList className="h-20 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground grid grid-cols-3 mb-6">
                         <TabsTrigger value="citizen" className="flex flex-col items-center py-3 gap-2">
                           <User className="h-5 w-5" />
                           <span>Citizen</span>

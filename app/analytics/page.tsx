@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -249,61 +250,8 @@ export default function Analytics() {
               </CardContent>
             </Card>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Contractor Performance</CardTitle>
-                <CardDescription>Rating and completion metrics</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="border rounded-md overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Contractor
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Projects
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Rating
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          On-Time
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {[
-                        { name: "ABC Construction", projects: 32, rating: "4.8", onTime: "94%" },
-                        { name: "City Builders Inc.", projects: 28, rating: "4.5", onTime: "89%" },
-                        { name: "Metro Repairs", projects: 45, rating: "4.2", onTime: "82%" },
-                        { name: "Urban Fixers", projects: 19, rating: "3.9", onTime: "78%" },
-                        { name: "Quality Contractors", projects: 23, rating: "4.6", onTime: "91%" },
-                      ].map((row, index) => (
-                        <tr key={index}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{row.name}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.projects}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <div className="flex items-center">
-                              <svg
-                                className="h-4 w-4 text-amber-400 mr-1"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0a0.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0a-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0a-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0a-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h\
+        </main>
+      </div>
+    </div>
+  )
+}

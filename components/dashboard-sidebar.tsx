@@ -20,8 +20,8 @@ export function DashboardSidebar({ open, setOpen }: DashboardSidebarProps) {
     { icon: <Tool className="h-5 w-5" />, label: "Contractors", href: "/contractor/dashboard" },
     { icon: <MessageSquare className="h-5 w-5" />, label: "Messages", href: "/dashboard?tab=messages" },
     { icon: <PieChart className="h-5 w-5" />, label: "Analytics", href: "/analytics" },
-    { icon: <User className="h-5 w-5" />, label: "Profile", href: "/dashboard?tab=profile" },
-    { icon: <Settings className="h-5 w-5" />, label: "Settings", href: "/dashboard?tab=settings" },
+    { icon: <User className="h-5 w-5" />, label: "Profile", href: "/profile" },
+    { icon: <Settings className="h-5 w-5" />, label: "Settings", href: "/settings" },
   ]
 
   return (
