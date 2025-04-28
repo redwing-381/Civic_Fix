@@ -4,8 +4,9 @@ import { useState } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { use } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -30,7 +31,8 @@ import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { Timeline } from "@/components/timeline"
 
-export default function IssueDetail({ params }: { params: { id: string } }) {
+export default function IssueDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [comment, setComment] = useState("")
@@ -38,7 +40,7 @@ export default function IssueDetail({ params }: { params: { id: string } }) {
 
   // Mock data for the issue
   const issue = {
-    id: params.id,
+    id,
     title: "Pothole on Main Street",
     description:
       "Large pothole approximately 2 feet wide causing traffic hazards and potential vehicle damage. Located near the intersection with Oak Avenue.",

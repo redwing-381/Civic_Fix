@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, Suspense } from "react"
 import { FileText, MessageSquare, User, Clock, CheckCircle2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,7 +14,7 @@ import { StatCard } from "@/components/stat-card"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 
-export default function Dashboard() {
+function DashboardContent() {
   const isMobile = useMobile()
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
   const searchParams = useSearchParams()
@@ -350,5 +350,13 @@ export default function Dashboard() {
         </main>
       </div>
     </div>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DashboardContent />
+    </Suspense>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { use } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -26,7 +27,8 @@ import {
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 
-export default function BidSubmission({ params }: { params: { id: string } }) {
+export default function BidSubmission({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params)
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [bidAmount, setBidAmount] = useState(1350)
@@ -35,7 +37,7 @@ export default function BidSubmission({ params }: { params: { id: string } }) {
 
   // Mock data for the tender
   const tender = {
-    id: params.id,
+    id,
     title: "Pothole Repairs - Main Street",
     description:
       "Repair of 3 potholes on Main Street between 5th and 6th Avenue. The largest pothole is approximately 2 feet wide and 4 inches deep. The other two are approximately 1 foot wide and 3 inches deep. The repair should include filling, compacting, and sealing the potholes to match the existing road surface.",

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -17,14 +17,51 @@ import {
   MapPin,
   Star,
   Timer,
+  Loader2,
 } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { StatCard } from "@/components/stat-card"
 import Link from "next/link"
 
+interface Tender {
+  id: string
+  title: string
+  description: string
+  location: string
+  budget: string
+  deadline: string
+  category: string
+  urgent: boolean
+  reportId: string
+  report?: {
+    title: string
+  }
+}
+
 export default function ContractorDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [tenders, setTenders] = useState<Tender[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchTenders = async () => {
+      try {
+        const response = await fetch("/api/tenders")
+        if (!response.ok) {
+          throw new Error("Failed to fetch tenders")
+        }
+        const data = await response.json()
+        setTenders(data)
+      } catch (error) {
+        console.error("Error fetching tenders:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchTenders()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -43,7 +80,7 @@ export default function ContractorDashboard() {
             <StatCard title="Active Projects" value="8" change="+2" trend="up" icon={<Hammer className="h-5 w-5" />} />
             <StatCard
               title="Available Tenders"
-              value="24"
+              value={tenders.length.toString()}
               change="+5"
               trend="up"
               icon={<FileText className="h-5 w-5" />}
@@ -74,91 +111,64 @@ export default function ContractorDashboard() {
                   </TabsList>
 
                   <TabsContent value="all" className="space-y-4">
-                    {[
-                      {
-                        id: "1",
-                        title: "Pothole Repairs - Main Street",
-                        location: "Downtown, Main St & 5th Ave",
-                        budget: "$1,200 - $1,500",
-                        deadline: "Today, 5:00 PM",
-                        category: "Road Damage",
-                        urgent: false,
-                      },
-                      {
-                        id: "2",
-                        title: "Street Light Replacement",
-                        location: "Westside, Park Avenue",
-                        budget: "$800 - $1,000",
-                        deadline: "Tomorrow, 12:00 PM",
-                        category: "Electrical Issues",
-                        urgent: false,
-                      },
-                      {
-                        id: "3",
-                        title: "Fallen Tree Removal",
-                        location: "Northside, Elm Street",
-                        budget: "$500 - $700",
-                        deadline: "May 15, 3:00 PM",
-                        category: "Public Property",
-                        urgent: true,
-                      },
-                      {
-                        id: "4",
-                        title: "Sidewalk Repair",
-                        location: "Eastside, Oak Lane",
-                        budget: "$2,000 - $2,500",
-                        deadline: "May 18, 10:00 AM",
-                        category: "Road Damage",
-                        urgent: false,
-                      },
-                    ].map((tender) => (
-                      <div
-                        key={tender.id}
-                        className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
-                      >
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-medium text-gray-800">{tender.title}</h3>
-                              {tender.urgent && (
-                                <Badge variant="destructive" className="text-xs">
-                                  Urgent
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-gray-500 mt-1">
-                              <span className="flex items-center">
-                                <MapPin className="h-3 w-3 mr-1" />
-                                {tender.location}
-                              </span>
-                              <span className="hidden sm:inline">•</span>
-                              <span>{tender.category}</span>
-                            </div>
+                    {loading ? (
+                      <div className="flex justify-center items-center h-32">
+                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                      </div>
+                    ) : tenders.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        No tenders available at the moment.
+                      </div>
+                    ) : (
+                      tenders.map((tender) => (
+                        <div
+                          key={tender.id}
+                          className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-medium text-gray-800 text-lg">{tender.report?.title || tender.title}</h3>
+                            {tender.urgent && (
+                              <Badge variant="destructive" className="text-xs">
+                                Urgent
+                              </Badge>
+                            )}
                           </div>
-                          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-                            <div className="text-sm">
-                              <div className="flex items-center text-gray-500">
-                                <DollarSign className="h-3 w-3 mr-1" />
-                                <span>{tender.budget}</span>
-                              </div>
-                              <div className="flex items-center text-gray-500 mt-1">
-                                <Clock className="h-3 w-3 mr-1" />
-                                <span
-                                  className={
-                                    tender.deadline.includes("Today") ? "text-red-500 font-medium" : "text-gray-500"
-                                  }
-                                >
-                                  {tender.deadline}
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-gray-500 mt-1">
+                                <span className="flex items-center">
+                                  <MapPin className="h-3 w-3 mr-1" />
+                                  {tender.location}
                                 </span>
+                                <span className="hidden sm:inline">•</span>
+                                <span>{tender.category}</span>
                               </div>
                             </div>
-                            <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
-                              <Link href={`/contractor/bid/${tender.id}`}>Place Bid</Link>
-                            </Button>
+                            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+                              <div className="text-sm">
+                                <div className="flex items-center text-gray-500">
+                                  <DollarSign className="h-3 w-3 mr-1" />
+                                  <span>{tender.budget}</span>
+                                </div>
+                                <div className="flex items-center text-gray-500 mt-1">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  <span
+                                    className={
+                                      tender.deadline.includes("Today") ? "text-red-500 font-medium" : "text-gray-500"
+                                    }
+                                  >
+                                    {tender.deadline}
+                                  </span>
+                                </div>
+                              </div>
+                              <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
+                                <Link href={`/contractor/bid/${tender.id}`}>Place Bid</Link>
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </TabsContent>
 
                   <TabsContent value="nearby">
@@ -188,10 +198,8 @@ export default function ContractorDashboard() {
               </CardContent>
               <CardFooter>
                 <Button variant="ghost" size="sm" className="ml-auto">
-                  <Link href="/contractor/tenders">
-                    View All Tenders
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  </Link>
+                  <Link href="/contractor/tenders">View All Tenders</Link>
+                  <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
               </CardFooter>
             </Card>
