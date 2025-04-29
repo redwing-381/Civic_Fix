@@ -41,6 +41,14 @@ const reportSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  assignedContractor: {
+    type: String,
+    default: null
+  },
+  progress: {
+    type: Number,
+    default: 0
   }
 });
 
@@ -50,4 +58,35 @@ reportSchema.pre('save', function(next) {
   next();
 });
 
-export const Report = mongoose.models.Report || mongoose.model('Report', reportSchema); 
+export const Report = mongoose.models.Report || mongoose.model('Report', reportSchema);
+
+const bidSchema = new mongoose.Schema({
+  reportId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Report',
+    required: true
+  },
+  contractor: {
+    type: String,
+    required: true
+  },
+  amount: {
+    type: Number,
+    required: true
+  },
+  progress: {
+    type: Number,
+    default: 0
+  },
+  status: {
+    type: String,
+    enum: ['active', 'completed'],
+    default: 'active'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+export const Bid = mongoose.models.Bid || mongoose.model('Bid', bidSchema); 

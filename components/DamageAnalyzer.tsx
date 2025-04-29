@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import Image from "next/image";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, MapPin } from "lucide-react";
 
 const COUNTRIES = [
   'United States', 'Canada', 'Mexico', 'Brazil', 'Argentina', 'Colombia', 'Peru', 'Chile',
@@ -91,7 +91,10 @@ export default function DamageAnalyzer() {
       }
 
       const analysisData = await analysisResponse.json();
-      setResult(analysisData);
+      setResult({
+        ...analysisData,
+        location: analysisData.location || location,
+      });
     } catch (error) {
       console.error('Detailed error:', error);
       setError(error instanceof Error ? error.message : 'Failed to analyze damage. Please try again.');
@@ -269,6 +272,13 @@ export default function DamageAnalyzer() {
                   <p><span className="font-medium">Country:</span> {result.country}</p>
                   <p><span className="font-medium">Location:</span> {result.location}</p>
                   <p><span className="font-medium">Estimated Cost:</span> {result.currency} {result.costEstimate.min} - {result.costEstimate.max}</p>
+                </div>
+              </div>
+
+              <div className="rounded-md overflow-hidden border border-gray-200 h-[200px] bg-gray-100 flex items-center justify-center">
+                <div className="text-center p-4">
+                  <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm">Map showing: {result.location}</p>
                 </div>
               </div>
 

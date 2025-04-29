@@ -17,17 +17,27 @@ interface Report {
   _id: string;
   title: string;
   description: string;
-  country: string;
   location: string;
-  imageUrl: string | null;
-  status: string;
+  status: "urgent" | "pending" | "in-progress" | "bidding" | "completed";
   createdAt: string;
   updatedAt: string;
-  costEstimate?: {
+  progress?: number;
+  assignedContractor?: string;
+  imageUrl?: string;
+  country: string;
+  costEstimate: {
     min: number;
     max: number;
   };
-  currency?: string;
+  currency: string;
+}
+
+interface Bid {
+  _id: string;
+  reportId: string;
+  contractor: string;
+  progress: number;
+  status: string;
 }
 
 export default function MyReports() {
@@ -40,18 +50,47 @@ export default function MyReports() {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        console.log('Fetching reports...')
-        const response = await fetch('/api/reports')
-        if (!response.ok) {
-          const errorData = await response.json()
+        console.log('Fetching reports and bids...')
+        // Fetch reports
+        const reportsResponse = await fetch('/api/reports')
+        if (!reportsResponse.ok) {
+          const errorData = await reportsResponse.json()
           throw new Error(errorData.error || 'Failed to fetch reports')
         }
-        const data = await response.json()
-        console.log('Reports fetched successfully:', data)
-        setReports(data)
+        const reportsData = await reportsResponse.json()
+        
+        // Fetch all bids
+        const bidsResponse = await fetch('/api/bids')
+        if (!bidsResponse.ok) {
+          throw new Error('Failed to fetch bids')
+        }
+        const bidsData = await bidsResponse.json()
+        
+        // Map bids to their reports
+        const reportsWithProgress = reportsData.map((report: Report) => {
+          // Find the associated bid for this report
+          const associatedBid = bidsData.find((bid: Bid) => 
+            bid.reportId === report._id && 
+            bid.contractor === report.assignedContractor
+          )
+          
+          // If there's an associated bid, use its progress
+          if (associatedBid) {
+            console.log(`Found bid for report ${report.title}:`, associatedBid)
+            return {
+              ...report,
+              progress: associatedBid.progress
+            }
+          }
+          
+          return report
+        })
+
+        console.log('Reports with bid progress:', reportsWithProgress)
+        setReports(reportsWithProgress)
         setError(null)
       } catch (error) {
-        console.error('Error fetching reports:', error)
+        console.error('Error fetching reports and bids:', error)
         setError(error instanceof Error ? error.message : 'Failed to fetch reports')
       } finally {
         setLoading(false)
@@ -142,18 +181,31 @@ export default function MyReports() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {reports.map((report) => (
-                      <IssueCard
-                        key={report._id}
-                        title={report.title}
-                        description={report.description}
-                        location={report.location}
-                        status={report.status}
-                        daysAgo={Math.floor((new Date().getTime() - new Date(report.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
-                        progress={report.status === 'completed' ? 100 : report.status === 'in-progress' ? 50 : 10}
-                        id={report._id}
-                      />
-                    ))}
+                    {reports.map((report) => {
+                      console.log(`Rendering report ${report.title}:`, {
+                        status: report.status,
+                        progress: report.progress,
+                        calculatedProgress: report.progress ?? (report.status === 'completed' ? 100 : report.status === 'in-progress' ? 50 : 10)
+                      });
+                      return (
+                        <IssueCard
+                          key={report._id}
+                          title={report.title}
+                          description={report.description}
+                          location={report.location}
+                          status={report.status}
+                          daysAgo={Math.floor((new Date().getTime() - new Date(report.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                          progress={report.progress ?? (report.status === 'completed' ? 100 : report.status === 'in-progress' ? 50 : 10)}
+                          id={report._id}
+                          imageUrl={report.imageUrl}
+                          country={report.country}
+                          createdAt={report.createdAt}
+                          updatedAt={report.updatedAt}
+                          costEstimate={report.costEstimate}
+                          currency={report.currency}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

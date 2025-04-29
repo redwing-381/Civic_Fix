@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import React from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,50 +27,66 @@ import {
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 
-export default function BidSubmission({ params }: { params: { id: string } }) {
+export default function BidSubmission({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
+  const { id } = React.use(params)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [bidAmount, setBidAmount] = useState(1350)
+  const [bidAmount, setBidAmount] = useState<number | null>(null)
   const [timeframe, setTimeframe] = useState(5)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [report, setReport] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
 
-  // Mock data for the tender
-  const tender = {
-    id: params.id,
-    title: "Pothole Repairs - Main Street",
-    description:
-      "Repair of 3 potholes on Main Street between 5th and 6th Avenue. The largest pothole is approximately 2 feet wide and 4 inches deep. The other two are approximately 1 foot wide and 3 inches deep. The repair should include filling, compacting, and sealing the potholes to match the existing road surface.",
-    location: "Downtown, Main St between 5th & 6th Ave",
-    budget: "$1,200 - $1,500",
-    deadline: "Today, 5:00 PM",
-    category: "Road Damage",
-    subcategory: "Pothole",
-    postedDate: "May 10, 2023",
-    estimatedCompletion: "Within 7 days of award",
-    earnestMoney: "$200",
-    specifications: [
-      "Use high-quality asphalt mix suitable for heavy traffic areas",
-      "Ensure proper drainage to prevent water accumulation",
-      "Match existing road surface texture and level",
-      "Provide 1-year warranty on workmanship",
-      "Work to be conducted during off-peak hours (9 PM - 5 AM)",
-    ],
-    attachments: [
-      { name: "Technical Specifications.pdf", size: "1.2 MB" },
-      { name: "Site Photos.zip", size: "3.5 MB" },
-      { name: "Traffic Management Plan.pdf", size: "0.8 MB" },
-    ],
-    bidders: 3,
-    timeRemaining: "4 hours 23 minutes",
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        const response = await fetch('/api/reports')
+        if (!response.ok) throw new Error('Failed to fetch report')
+        const data = await response.json()
+        const found = data.find((r: any) => r._id === id)
+        setReport(found)
+        setBidAmount(found?.costEstimate?.min || null)
+      } catch (e: any) {
+        setError(e.message)
+      }
+    }
+    fetchReport()
+  }, [id])
+
+  const handleSubmitBid = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!report || bidAmount == null) return
+    if (bidAmount < report.costEstimate.min || bidAmount > report.costEstimate.max) {
+      setError(`Bid must be between ${report.costEstimate.min} and ${report.costEstimate.max}`)
+      return
+    }
+    setIsSubmitting(true)
+    setError(null)
+    try {
+      // TODO: Replace with real contractor info
+      const bidData = {
+        reportId: report._id,
+        contractor: 'demo-contractor',
+        amount: bidAmount,
+      }
+      const res = await fetch('/api/bids', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bidData),
+      })
+      if (!res.ok) throw new Error('Failed to submit bid')
+      setSuccess(true)
+      setTimeout(() => router.push('/contractor/dashboard'), 2000)
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleSubmitBid = () => {
-    setIsSubmitting(true)
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false)
-      router.push("/contractor/dashboard?success=true")
-    }, 2000)
+  if (!report) {
+    return <div className="min-h-screen flex items-center justify-center text-gray-500">Loading...</div>
   }
 
   return (
@@ -93,10 +110,10 @@ export default function BidSubmission({ params }: { params: { id: string } }) {
 
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-800">{tender.title}</h1>
+                  <h1 className="text-2xl font-bold text-gray-800">{report.title}</h1>
                   <div className="flex items-center gap-2 text-gray-500 mt-1">
                     <MapPin className="h-4 w-4" />
-                    <span>{tender.location}</span>
+                    <span>{report.location}</span>
                   </div>
                 </div>
 
@@ -106,7 +123,7 @@ export default function BidSubmission({ params }: { params: { id: string } }) {
                     className="bg-amber-50 text-amber-600 border-amber-200 flex items-center gap-1 px-3 py-1.5"
                   >
                     <Clock className="h-4 w-4" />
-                    <span>Closes in {tender.timeRemaining}</span>
+                    <span>Closes in {report.timeRemaining}</span>
                   </Badge>
                 </div>
               </div>
@@ -122,84 +139,33 @@ export default function BidSubmission({ params }: { params: { id: string } }) {
                   <CardContent className="space-y-4">
                     <div>
                       <h3 className="text-lg font-medium text-gray-800 mb-2">Description</h3>
-                      <p className="text-gray-600">{tender.description}</p>
+                      <p className="text-gray-600">{report.description}</p>
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <h3 className="text-lg font-medium text-gray-800 mb-3">Tender Information</h3>
                         <dl className="space-y-2">
                           <div className="flex justify-between py-2 border-b border-gray-100">
-                            <dt className="text-gray-500">Category</dt>
-                            <dd className="font-medium text-gray-800">{tender.category}</dd>
+                            <dt className="text-gray-500">Country</dt>
+                            <dd className="font-medium text-gray-800">{report.country}</dd>
                           </div>
                           <div className="flex justify-between py-2 border-b border-gray-100">
-                            <dt className="text-gray-500">Subcategory</dt>
-                            <dd className="font-medium text-gray-800">{tender.subcategory}</dd>
+                            <dt className="text-gray-500">Location</dt>
+                            <dd className="font-medium text-gray-800">{report.location}</dd>
                           </div>
                           <div className="flex justify-between py-2 border-b border-gray-100">
                             <dt className="text-gray-500">Budget Range</dt>
-                            <dd className="font-medium text-gray-800">{tender.budget}</dd>
+                            <dd className="font-medium text-gray-800">{report.currency || '$'}{report.costEstimate?.min} - {report.currency || '$'}{report.costEstimate?.max}</dd>
                           </div>
                           <div className="flex justify-between py-2 border-b border-gray-100">
-                            <dt className="text-gray-500">Posted Date</dt>
-                            <dd className="font-medium text-gray-800">{tender.postedDate}</dd>
+                            <dt className="text-gray-500">Created At</dt>
+                            <dd className="font-medium text-gray-800">{new Date(report.createdAt).toLocaleDateString()}</dd>
                           </div>
                           <div className="flex justify-between py-2 border-b border-gray-100">
-                            <dt className="text-gray-500">Bid Deadline</dt>
-                            <dd className="font-medium text-gray-800 text-red-500">{tender.deadline}</dd>
-                          </div>
-                          <div className="flex justify-between py-2">
-                            <dt className="text-gray-500">Earnest Money</dt>
-                            <dd className="font-medium text-gray-800">{tender.earnestMoney}</dd>
+                            <dt className="text-gray-500">Last Updated</dt>
+                            <dd className="font-medium text-gray-800">{new Date(report.updatedAt).toLocaleDateString()}</dd>
                           </div>
                         </dl>
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-medium text-gray-800 mb-3">Project Requirements</h3>
-                        <ul className="space-y-2 text-gray-600">
-                          {tender.specifications.map((spec, index) => (
-                            <li key={index} className="flex items-start gap-2">
-                              <CheckCircle2 className="h-5 w-5 text-teal-500 flex-shrink-0 mt-0.5" />
-                              <span>{spec}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-800 mb-3">Attachments</h3>
-                      <div className="space-y-2">
-                        {tender.attachments.map((attachment, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
-                          >
-                            <div className="flex items-center">
-                              <FileText className="h-5 w-5 text-gray-400 mr-2" />
-                              <span className="font-medium text-gray-700">{attachment.name}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm text-gray-500">{attachment.size}</span>
-                              <Button variant="ghost" size="sm">
-                                Download
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="bg-amber-50 border border-amber-200 rounded-md p-4 flex items-start gap-3">
-                      <Info className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-medium text-amber-800 mb-1">Important Notice</h4>
-                        <p className="text-sm text-amber-700">
-                          This project requires work during off-peak hours (9 PM - 5 AM) to minimize traffic disruption.
-                          Please ensure you can accommodate this schedule before bidding.
-                        </p>
                       </div>
                     </div>
                   </CardContent>
@@ -210,100 +176,107 @@ export default function BidSubmission({ params }: { params: { id: string } }) {
                     <CardTitle>Submit Your Bid</CardTitle>
                     <CardDescription>Provide your bid details and proposal</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="bid-amount">Bid Amount (USD)</Label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                        <Input
-                          id="bid-amount"
-                          type="number"
-                          value={bidAmount}
-                          onChange={(e) => setBidAmount(Number(e.target.value))}
-                          className="pl-10"
-                        />
-                      </div>
-                      <div className="flex justify-between text-sm text-gray-500">
-                        <span>Budget Range: {tender.budget}</span>
-                        <span>Your Bid: ${bidAmount}</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="timeframe">Completion Timeframe (Days)</Label>
-                      <Slider
-                        id="timeframe"
-                        defaultValue={[timeframe]}
-                        max={14}
-                        step={1}
-                        onValueChange={(value) => setTimeframe(value[0])}
-                      />
-                      <div className="flex justify-between text-sm text-gray-500">
-                        <span>Faster (3 days)</span>
-                        <span>Selected: {timeframe} days</span>
-                        <span>Longer (14 days)</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="proposal">Proposal Details</Label>
-                      <Textarea
-                        id="proposal"
-                        placeholder="Describe your approach, materials, and any additional value you'll provide..."
-                        className="min-h-[150px]"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Supporting Documents (Optional)</Label>
-                      <div className="border-2 border-dashed border-gray-200 rounded-md p-6 text-center">
-                        <div className="flex flex-col items-center">
-                          <Upload className="h-10 w-10 text-gray-400 mb-2" />
-                          <span className="text-sm text-gray-500">Click to upload or drag and drop</span>
-                          <span className="text-xs text-gray-400 mt-1">PDF, DOC, XLS (max. 10MB)</span>
+                  <form onSubmit={handleSubmitBid}>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="bidAmount">Your Bid Amount</Label>
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                          <Input
+                            id="bidAmount"
+                            type="number"
+                            min={report.costEstimate?.min}
+                            max={report.costEstimate?.max}
+                            value={bidAmount ?? ''}
+                            onChange={e => setBidAmount(Number(e.target.value))}
+                            required
+                            step="1"
+                            className="pl-10"
+                          />
                         </div>
-                        <Input id="file-upload" type="file" className="hidden" />
+                        <div className="text-xs text-gray-500 mb-2">
+                          Bid must be between {report.currency || '$'}{report.costEstimate?.min} and {report.currency || '$'}{report.costEstimate?.max}
+                        </div>
+                        {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
+                        {success && <div className="text-green-600 text-sm mb-2">Bid submitted successfully! Redirecting...</div>}
                       </div>
-                    </div>
 
-                    <div className="bg-gray-50 p-4 rounded-md">
-                      <div className="flex items-center mb-3">
-                        <input
-                          type="checkbox"
-                          id="terms"
-                          className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                      <div className="space-y-2">
+                        <Label htmlFor="timeframe">Completion Timeframe (Days)</Label>
+                        <Slider
+                          id="timeframe"
+                          defaultValue={[timeframe]}
+                          max={14}
+                          step={1}
+                          onValueChange={(value) => setTimeframe(value[0])}
                         />
-                        <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-                          I confirm that all information provided is accurate and I agree to the{" "}
-                          <a href="#" className="text-teal-600 hover:text-teal-500">
-                            Terms and Conditions
-                          </a>
-                        </label>
+                        <div className="flex justify-between text-sm text-gray-500">
+                          <span>Faster (3 days)</span>
+                          <span>Selected: {timeframe} days</span>
+                          <span>Longer (14 days)</span>
+                        </div>
                       </div>
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id="availability"
-                          className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+
+                      <div className="space-y-2">
+                        <Label htmlFor="proposal">Proposal Details</Label>
+                        <Textarea
+                          id="proposal"
+                          placeholder="Describe your approach, materials, and any additional value you'll provide..."
+                          className="min-h-[150px]"
                         />
-                        <label htmlFor="availability" className="ml-2 block text-sm text-gray-700">
-                          I confirm my availability to complete this project within the specified timeframe
-                        </label>
                       </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter>
-                    <Button onClick={handleSubmitBid} disabled={isSubmitting} className="ml-auto">
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Submitting Bid...
-                        </>
-                      ) : (
-                        "Submit Bid"
-                      )}
-                    </Button>
-                  </CardFooter>
+
+                      <div className="space-y-2">
+                        <Label>Supporting Documents (Optional)</Label>
+                        <div className="border-2 border-dashed border-gray-200 rounded-md p-6 text-center">
+                          <div className="flex flex-col items-center">
+                            <Upload className="h-10 w-10 text-gray-400 mb-2" />
+                            <span className="text-sm text-gray-500">Click to upload or drag and drop</span>
+                            <span className="text-xs text-gray-400 mt-1">PDF, DOC, XLS (max. 10MB)</span>
+                          </div>
+                          <Input id="file-upload" type="file" className="hidden" />
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50 p-4 rounded-md">
+                        <div className="flex items-center mb-3">
+                          <input
+                            type="checkbox"
+                            id="terms"
+                            className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                          />
+                          <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
+                            I confirm that all information provided is accurate and I agree to the{" "}
+                            <a href="#" className="text-teal-600 hover:text-teal-500">
+                              Terms and Conditions
+                            </a>
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id="availability"
+                            className="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+                          />
+                          <label htmlFor="availability" className="ml-2 block text-sm text-gray-700">
+                            I confirm my availability to complete this project within the specified timeframe
+                          </label>
+                        </div>
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      <Button type="submit" disabled={isSubmitting} className="ml-auto">
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Submitting Bid...
+                          </>
+                        ) : (
+                          "Submit Bid"
+                        )}
+                      </Button>
+                    </CardFooter>
+                  </form>
                 </Card>
               </div>
 
@@ -322,11 +295,11 @@ export default function BidSubmission({ params }: { params: { id: string } }) {
                       </div>
                       <div className="flex justify-between py-2 border-b border-gray-100">
                         <dt className="text-gray-500">Earnest Money Required</dt>
-                        <dd className="font-medium text-gray-800">{tender.earnestMoney}</dd>
+                        <dd className="font-medium text-gray-800">{report.earnestMoney}</dd>
                       </div>
                       <div className="flex justify-between py-2">
                         <dt className="text-gray-500">Competing Bids</dt>
-                        <dd className="font-medium text-gray-800">{tender.bidders}</dd>
+                        <dd className="font-medium text-gray-800">{report.bidders}</dd>
                       </div>
                     </dl>
                   </CardContent>
@@ -342,7 +315,7 @@ export default function BidSubmission({ params }: { params: { id: string } }) {
                         </div>
                         <div>
                           <p className="font-medium text-gray-800">Tender Posted</p>
-                          <p className="text-sm text-gray-500">{tender.postedDate}</p>
+                          <p className="text-sm text-gray-500">{report.postedDate}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
@@ -351,7 +324,7 @@ export default function BidSubmission({ params }: { params: { id: string } }) {
                         </div>
                         <div>
                           <p className="font-medium text-gray-800">Bid Deadline</p>
-                          <p className="text-sm text-red-500">{tender.deadline}</p>
+                          <p className="text-sm text-red-500">{report.deadline}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-3">
