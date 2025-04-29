@@ -1,64 +1,59 @@
-import { NextResponse } from "next/server"
-import { db } from "@/lib/db"
-import { writeFile } from "fs/promises"
-import { join } from "path"
-
-export async function GET() {
-  try {
-    const reports = await db.report.findMany({
-      include: { tender: true },
-    })
-    return NextResponse.json(reports)
-  } catch (error) {
-    console.error("Error fetching reports:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
-}
+import { NextResponse } from 'next/server';
+import dbConnect from '@/lib/db';
+import { Report } from '@/lib/db/schema';
 
 export async function POST(request: Request) {
   try {
-    const formData = await request.formData()
-    const title = formData.get("title") as string
-    const description = formData.get("description") as string
-    const location = formData.get("location") as string
-    const category = formData.get("category") as string || "Public Issue"
-    const image = formData.get("image") as File | null
-
-    if (!title || !description || !location) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    console.log('Connecting to database...');
+    await dbConnect();
+    console.log('Database connected successfully');
+    
+    const data = await request.json();
+    console.log('Received data:', data);
+    
+    if (!data.title || !data.description || !data.country || !data.location) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
     }
 
-    // Handle image upload if present
-    let imagePath = null
-    if (image) {
-      const bytes = await image.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-      const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`
-      const filename = `${uniqueSuffix}-${image.name}`
-      const publicDir = join(process.cwd(), "public", "uploads")
-      const filePath = join(publicDir, filename)
-      await writeFile(filePath, buffer)
-      imagePath = `/uploads/${filename}`
-    }
+    const newReport = await Report.create({
+      title: data.title,
+      description: data.description,
+      country: data.country,
+      location: data.location,
+      imageUrl: data.imageUrl || null,
+      status: 'pending',
+      costEstimate: data.costEstimate || null,
+      currency: data.currency || null
+    });
 
-    // Create the report in MongoDB
-    const report = await db.report.create({
-      data: { title, description, location, category, image: imagePath },
-    })
-
-    // Create a tender for this report
-    const tender = await db.tender.create({
-      data: {
-        budget: "To be determined",
-        deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-        urgent: false,
-        reportId: report.id,
-      },
-    })
-
-    return NextResponse.json({ report, tender }, { status: 201 })
+    console.log('Report created successfully:', newReport);
+    return NextResponse.json(newReport);
   } catch (error) {
-    console.error("Error processing report:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error('Detailed error creating report:', error);
+    return NextResponse.json(
+      { error: 'Failed to create report', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  try {
+    console.log('Connecting to database for GET request...');
+    await dbConnect();
+    console.log('Database connected successfully');
+    
+    const allReports = await Report.find().sort({ createdAt: -1 });
+    console.log('Reports fetched successfully:', allReports.length);
+    return NextResponse.json(allReports);
+  } catch (error) {
+    console.error('Detailed error fetching reports:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch reports', details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 } 

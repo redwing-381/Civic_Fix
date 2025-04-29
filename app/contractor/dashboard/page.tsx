@@ -23,44 +23,60 @@ import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { StatCard } from "@/components/stat-card"
 import Link from "next/link"
-
-interface Tender {
-  id: string
-  title: string
-  description: string
-  location: string
-  budget: string
-  deadline: string
-  category: string
-  urgent: boolean
-  reportId: string
-  report?: {
-    title: string
-  }
-}
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { Slider } from '@/components/ui/slider';
 
 export default function ContractorDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [tenders, setTenders] = useState<Tender[]>([])
+  const [tenders, setTenders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [activeBids, setActiveBids] = useState<any[]>([])
+  const [activeBidsLoading, setActiveBidsLoading] = useState(true)
+  const [detailsModal, setDetailsModal] = useState<{ open: boolean, project: any | null }>({ open: false, project: null })
+  const [successModal, setSuccessModal] = useState<{ open: boolean, message: string }>({ open: false, message: '' })
 
   useEffect(() => {
     const fetchTenders = async () => {
       try {
-        const response = await fetch("/api/tenders")
-        if (!response.ok) {
-          throw new Error("Failed to fetch tenders")
-        }
+        const response = await fetch("/api/reports")
+        if (!response.ok) throw new Error("Failed to fetch tenders")
         const data = await response.json()
-        setTenders(data)
-      } catch (error) {
-        console.error("Error fetching tenders:", error)
+        // Only show reports with status 'pending' or 'bidding'
+        const filtered = data.filter((r: any) => r.status === 'pending' || r.status === 'bidding')
+        setTenders(filtered)
+        setError(null)
+      } catch (e: any) {
+        setError(e.message)
       } finally {
         setLoading(false)
       }
     }
-
     fetchTenders()
+  }, [])
+
+  useEffect(() => {
+    const fetchActiveBids = async () => {
+      try {
+        const res = await fetch('/api/bids?contractor=demo-contractor')
+        const bids = await res.json()
+        // Fetch associated reports for each bid
+        const reportIds = bids.map((b: any) => b.reportId)
+        const reportsRes = await fetch('/api/reports')
+        const reports = await reportsRes.json()
+        // Merge bid and report info
+        const merged = bids.map((bid: any) => {
+          const report = reports.find((r: any) => r._id === bid.reportId)
+          return { ...bid, report }
+        })
+        setActiveBids(merged)
+      } catch (e) {
+        setActiveBids([])
+      } finally {
+        setActiveBidsLoading(false)
+      }
+    }
+    fetchActiveBids()
   }, [])
 
   return (
@@ -112,57 +128,55 @@ export default function ContractorDashboard() {
 
                   <TabsContent value="all" className="space-y-4">
                     {loading ? (
-                      <div className="flex justify-center items-center h-32">
-                        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                      </div>
+                      <div className="text-center text-gray-500">Loading tenders...</div>
+                    ) : error ? (
+                      <div className="text-center text-red-500">{error}</div>
                     ) : tenders.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        No tenders available at the moment.
-                      </div>
+                      <div className="text-center text-gray-500">No available tenders at the moment.</div>
                     ) : (
                       tenders.map((tender) => (
                         <div
-                          key={tender.id}
+                          key={tender._id}
                           className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
                         >
-                          <div className="flex items-center gap-2 mb-2">
-                            <h3 className="font-medium text-gray-800 text-lg">{tender.report?.title || tender.title}</h3>
-                            {tender.urgent && (
-                              <Badge variant="destructive" className="text-xs">
-                                Urgent
-                              </Badge>
-                            )}
-                          </div>
                           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                            <div>
-                              <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-gray-500 mt-1">
-                                <span className="flex items-center">
-                                  <MapPin className="h-3 w-3 mr-1" />
-                                  {tender.location}
-                                </span>
-                                <span className="hidden sm:inline">•</span>
-                                <span>{tender.category}</span>
+                            <div className="flex gap-4 items-start">
+                              {tender.imageUrl && (
+                                <img src={tender.imageUrl} alt={tender.title} className="w-24 h-24 object-cover rounded-md border" />
+                              )}
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-medium text-gray-800">{tender.title}</h3>
+                                  {tender.urgent && (
+                                    <Badge variant="destructive" className="text-xs">Urgent</Badge>
+                                  )}
+                                </div>
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm text-gray-500 mt-1">
+                                  <span className="flex items-center">
+                                    <MapPin className="h-3 w-3 mr-1" />
+                                    {tender.location}
+                                  </span>
+                                  <span className="hidden sm:inline">•</span>
+                                  <span>{tender.category || 'General'}</span>
+                                </div>
                               </div>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                               <div className="text-sm">
                                 <div className="flex items-center text-gray-500">
                                   <DollarSign className="h-3 w-3 mr-1" />
-                                  <span>{tender.budget}</span>
+                                  <span>
+                                    {tender.currency || '$'}
+                                    {tender.costEstimate ? `${tender.costEstimate.min} - ${tender.costEstimate.max}` : 'N/A'}
+                                  </span>
                                 </div>
                                 <div className="flex items-center text-gray-500 mt-1">
                                   <Clock className="h-3 w-3 mr-1" />
-                                  <span
-                                    className={
-                                      tender.deadline.includes("Today") ? "text-red-500 font-medium" : "text-gray-500"
-                                    }
-                                  >
-                                    {tender.deadline}
-                                  </span>
+                                  <span className="text-gray-500">{new Date(tender.createdAt).toLocaleDateString()}</span>
                                 </div>
                               </div>
                               <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
-                                <Link href={`/contractor/bid/${tender.id}`}>Place Bid</Link>
+                                <Link href={`/contractor/bid/${tender._id}`}>Place Bid</Link>
                               </Button>
                             </div>
                           </div>
@@ -283,73 +297,115 @@ export default function ContractorDashboard() {
             <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Active Projects</CardTitle>
-                <CardDescription>Projects currently in progress</CardDescription>
+                <CardDescription>Projects you have bid on</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {[
-                    {
-                      id: "1",
-                      title: "Pothole Repair - Main Street",
-                      location: "Downtown, Main St & 5th Ave",
-                      deadline: "May 20, 2023",
-                      progress: 45,
-                      status: "in-progress",
-                    },
-                    {
-                      id: "2",
-                      title: "Guardrail Installation",
-                      location: "Highway 101, Mile Marker 23",
-                      deadline: "May 25, 2023",
-                      progress: 30,
-                      status: "in-progress",
-                    },
-                    {
-                      id: "3",
-                      title: "Sidewalk Replacement",
-                      location: "Eastside, Oak Lane",
-                      deadline: "June 5, 2023",
-                      progress: 15,
-                      status: "in-progress",
-                    },
-                  ].map((project) => (
-                    <div
-                      key={project.id}
-                      className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
-                    >
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-800">{project.title}</h3>
-                          <div className="flex items-center text-sm text-gray-500 mt-1">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            <span>{project.location}</span>
-                          </div>
-                          <div className="mt-3 space-y-1">
-                            <div className="flex justify-between text-xs">
-                              <span className="text-gray-500">Progress</span>
-                              <span className="font-medium">{project.progress}%</span>
+                {activeBidsLoading ? (
+                  <div className="text-center text-gray-500">Loading active projects...</div>
+                ) : activeBids.length === 0 ? (
+                  <div className="text-center text-gray-500">No active projects yet.</div>
+                ) : (
+                  <div className="space-y-4">
+                    {activeBids.map((item) => (
+                      <div
+                        key={item._id}
+                        className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                      >
+                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                          <div className="flex-1">
+                            <h3 className="font-medium text-gray-800">{item.report?.title || 'Unknown Project'}</h3>
+                            <div className="flex items-center text-sm text-gray-500 mt-1">
+                              <MapPin className="h-3 w-3 mr-1" />
+                              <span>{item.report?.location}</span>
                             </div>
-                            <Progress value={project.progress} className="h-1.5" />
+                            <div className="mt-3 space-y-1">
+                              <div className="flex justify-between text-xs">
+                                <span className="text-gray-500">Your Bid</span>
+                                <span className="font-medium">{item.report?.currency || '$'}{item.amount}</span>
+                              </div>
+                              <div className="flex justify-between text-xs">
+                                <span className="text-gray-500">Budget</span>
+                                <span className="font-medium">{item.report?.currency || '$'}{item.report?.costEstimate?.min} - {item.report?.currency || '$'}{item.report?.costEstimate?.max}</span>
+                              </div>
+                            </div>
+                            <div className="mt-4">
+                              <span className="text-xs text-gray-500">Progress: {item.progress || 0}%</span>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Slider
+                                  value={[item.progress || 0]}
+                                  min={0}
+                                  max={100}
+                                  step={1}
+                                  onValueChange={(value) => {
+                                    const newProgress = value[0];
+                                    setActiveBids((prev) => prev.map((b) => b._id === item._id ? { ...b, progress: newProgress } : b));
+                                  }}
+                                  className="flex-1"
+                                />
+                                <Button 
+                                  size="sm" 
+                                  className="bg-teal-600 hover:bg-teal-700"
+                                  onClick={async () => {
+                                    try {
+                                      console.log('Updating progress for bid:', item._id, 'to:', item.progress);
+                                      const response = await fetch(`/api/bids/${item._id}/progress`, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ progress: item.progress })
+                                      });
+                                      
+                                      if (!response.ok) {
+                                        throw new Error('Failed to update progress');
+                                      }
+                                      
+                                      const data = await response.json();
+                                      console.log('Update response:', data);
+                                      
+                                      // Update both bid and report in the UI
+                                      setActiveBids((prev) => prev.map((b) => {
+                                        if (b._id === item._id) {
+                                          const updated = { 
+                                            ...b, 
+                                            progress: item.progress,
+                                            report: data.report 
+                                          };
+                                          console.log('Updated bid in UI:', updated);
+                                          return updated;
+                                        }
+                                        return b;
+                                      }));
+
+                                      // Show success modal
+                                      setSuccessModal({ 
+                                        open: true, 
+                                        message: `Progress updated to ${item.progress}% successfully!` 
+                                      });
+                                    } catch (error) {
+                                      console.error('Error updating progress:', error);
+                                      // Revert the UI change if the update failed
+                                      setActiveBids((prev) => prev.map((b) => b._id === item._id ? { ...b, progress: item.progress } : b));
+                                    }
+                                  }}
+                                >
+                                  Update
+                                </Button>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            <span>Due: {project.deadline}</span>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
-                              <Link href={`/contractor/projects/${project.id}/update`}>Update Progress</Link>
-                            </Button>
-                            <Button size="sm" className="bg-teal-600 hover:bg-teal-700">
-                              <Link href={`/contractor/projects/${project.id}`}>View Details</Link>
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center text-sm text-gray-500">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              <span>Created: {item.report ? new Date(item.report.createdAt).toLocaleDateString() : '-'}</span>
+                            </div>
+                            <Button size="sm" className="bg-teal-600 hover:bg-teal-700" onClick={() => setDetailsModal({ open: true, project: item.report })}>
+                              View Details
                             </Button>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
               <CardFooter>
                 <Button variant="ghost" size="sm" className="ml-auto">
@@ -429,6 +485,55 @@ export default function ContractorDashboard() {
           </div>
         </main>
       </div>
+
+      <Dialog open={detailsModal.open} onOpenChange={open => setDetailsModal({ open, project: open ? detailsModal.project : null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Project Details</DialogTitle>
+            <DialogDescription>Read-only details for this project</DialogDescription>
+          </DialogHeader>
+          {detailsModal.project && (
+            <div className="space-y-2">
+              <div><span className="font-medium">Title:</span> {detailsModal.project.title}</div>
+              <div><span className="font-medium">Description:</span> {detailsModal.project.description}</div>
+              <div><span className="font-medium">Country:</span> {detailsModal.project.country}</div>
+              <div><span className="font-medium">Location:</span> {detailsModal.project.location}</div>
+              <div><span className="font-medium">Budget:</span> {detailsModal.project.currency || '$'}{detailsModal.project.costEstimate?.min} - {detailsModal.project.currency || '$'}{detailsModal.project.costEstimate?.max}</div>
+              <div><span className="font-medium">Created At:</span> {new Date(detailsModal.project.createdAt).toLocaleDateString()}</div>
+              <div><span className="font-medium">Last Updated:</span> {new Date(detailsModal.project.updatedAt).toLocaleDateString()}</div>
+              {detailsModal.project.imageUrl && (
+                <img src={detailsModal.project.imageUrl} alt="Project" className="w-full h-48 object-cover rounded mt-2" />
+              )}
+            </div>
+          )}
+          <DialogClose asChild>
+            <Button className="mt-4 w-full">Close</Button>
+          </DialogClose>
+        </DialogContent>
+      </Dialog>
+
+      {/* Success Modal */}
+      <Dialog open={successModal.open} onOpenChange={(open) => setSuccessModal({ ...successModal, open })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              Success
+            </DialogTitle>
+            <DialogDescription>
+              {successModal.message}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end mt-4">
+            <Button 
+              onClick={() => setSuccessModal({ open: false, message: '' })}
+              className="bg-teal-600 hover:bg-teal-700"
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
