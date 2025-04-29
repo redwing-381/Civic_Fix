@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { FileText, Clock, CheckCircle2, Loader2, Plus } from "lucide-react"
+import { useState, useEffect } from "react"
+import { FileText, Clock, CheckCircle2, Loader2, Plus, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,10 +11,59 @@ import { IssueCard } from "@/components/issue-card"
 import { StatCard } from "@/components/stat-card"
 import Link from "next/link"
 import { useMobile } from "@/hooks/use-mobile"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+interface Report {
+  _id: string;
+  title: string;
+  description: string;
+  country: string;
+  location: string;
+  imageUrl: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  costEstimate?: {
+    min: number;
+    max: number;
+  };
+  currency?: string;
+}
 
 export default function MyReports() {
   const isMobile = useMobile()
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
+  const [reports, setReports] = useState<Report[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        console.log('Fetching reports...')
+        const response = await fetch('/api/reports')
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to fetch reports')
+        }
+        const data = await response.json()
+        console.log('Reports fetched successfully:', data)
+        setReports(data)
+        setError(null)
+      } catch (error) {
+        console.error('Error fetching reports:', error)
+        setError(error instanceof Error ? error.message : 'Failed to fetch reports')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchReports()
+  }, [])
+
+  const getStatusCount = (status: string) => {
+    return reports.filter(report => report.status === status).length
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -37,31 +86,39 @@ export default function MyReports() {
             </Button>
           </div>
 
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatCard
               title="Total Reports"
-              value="24"
+              value={reports.length.toString()}
               change="+12%"
               trend="up"
               icon={<FileText className="h-5 w-5" />}
             />
             <StatCard
               title="In Progress"
-              value="8"
+              value={getStatusCount('in-progress').toString()}
               change="+5%"
               trend="up"
               icon={<Loader2 className="h-5 w-5" />}
             />
             <StatCard
               title="Pending Approval"
-              value="5"
+              value={getStatusCount('pending').toString()}
               change="-2%"
               trend="down"
               icon={<Clock className="h-5 w-5" />}
             />
             <StatCard
               title="Completed"
-              value="11"
+              value={getStatusCount('completed').toString()}
               change="+8%"
               trend="up"
               icon={<CheckCircle2 className="h-5 w-5" />}
@@ -75,44 +132,30 @@ export default function MyReports() {
                 <CardDescription>All issues you have reported</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <IssueCard
-                    title="Broken Water Main"
-                    description="Water leaking onto the street causing traffic hazards"
-                    location="123 Main St, Downtown"
-                    status="in-progress"
-                    daysAgo={2}
-                    progress={45}
-                    id="1"
-                  />
-                  <IssueCard
-                    title="Pothole Damage"
-                    description="Large pothole causing vehicle damage"
-                    location="456 Oak Ave, Westside"
-                    status="pending"
-                    daysAgo={5}
-                    progress={10}
-                    id="2"
-                  />
-                  <IssueCard
-                    title="Fallen Tree"
-                    description="Tree blocking sidewalk after storm"
-                    location="789 Pine St, Northside"
-                    status="completed"
-                    daysAgo={7}
-                    progress={100}
-                    id="3"
-                  />
-                  <IssueCard
-                    title="Street Light Out"
-                    description="Street light not working for past week"
-                    location="101 Elm St, Eastside"
-                    status="in-progress"
-                    daysAgo={3}
-                    progress={30}
-                    id="4"
-                  />
-                </div>
+                {loading ? (
+                  <div className="flex justify-center items-center h-32">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : reports.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No reports found. Create your first report!</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {reports.map((report) => (
+                      <IssueCard
+                        key={report._id}
+                        title={report.title}
+                        description={report.description}
+                        location={report.location}
+                        status={report.status}
+                        daysAgo={Math.floor((new Date().getTime() - new Date(report.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                        progress={report.status === 'completed' ? 100 : report.status === 'in-progress' ? 50 : 10}
+                        id={report._id}
+                      />
+                    ))}
+                  </div>
+                )}
               </CardContent>
               <CardFooter>
                 <Button variant="ghost" size="sm" className="ml-auto">
@@ -131,7 +174,7 @@ export default function MyReports() {
                   <div>
                     <div className="flex justify-between mb-1">
                       <span className="text-sm font-medium text-gray-700">This Month</span>
-                      <span className="text-sm font-medium text-gray-700">8 reports</span>
+                      <span className="text-sm font-medium text-gray-700">{reports.length} reports</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
                       <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: "80%" }}></div>
