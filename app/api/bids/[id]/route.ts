@@ -1,16 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Bid, Report } from '@/lib/db/schema';
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest) {
   try {
     await dbConnect();
+    const id = request.nextUrl.pathname.split('/')[3]; // Extract ID from URL
     const data = await request.json();
     if (typeof data.progress !== 'number') {
       return NextResponse.json({ error: 'Progress is required and must be a number' }, { status: 400 });
     }
     const updated = await Bid.findByIdAndUpdate(
-      params.id,
+      id,
       { progress: data.progress },
       { new: true }
     );

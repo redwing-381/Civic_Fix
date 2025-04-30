@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { PrismaClient } from '@prisma/client';
 
 const MONGODB_URI = process.env.DATABASE_URL!;
 
@@ -6,10 +7,19 @@ if (!MONGODB_URI) {
   throw new Error('Please define the DATABASE_URL environment variable inside .env');
 }
 
-let cached = global.mongoose;
+interface MongooseCache {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+declare global {
+  var mongoose: MongooseCache;
+}
+
+let cached: MongooseCache = global.mongoose || { conn: null, promise: null };
+
+if (!global.mongoose) {
+  global.mongoose = cached;
 }
 
 async function dbConnect() {
@@ -37,4 +47,8 @@ async function dbConnect() {
   return cached.conn;
 }
 
+// Initialize Prisma Client
+const prisma = new PrismaClient();
+
+export { prisma as db };
 export default dbConnect; 

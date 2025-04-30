@@ -1,12 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Bid, Report } from '@/lib/db/schema';
 
 // GET endpoint to retrieve the progress of a bid
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest
+) {
   try {
     await dbConnect();
-    const { id } = await params;
+    const id = request.nextUrl.pathname.split('/')[3]; // Extract ID from URL
     const bid = await Bid.findById(id);
     if (!bid) {
       return NextResponse.json({ error: 'Bid not found' }, { status: 404 });
@@ -21,10 +23,12 @@ export async function GET(request: Request, { params }: { params: { id: string }
 }
 
 // PATCH endpoint to update the progress of a bid
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: NextRequest
+) {
   try {
     await dbConnect();
-    const { id } = await params;
+    const id = request.nextUrl.pathname.split('/')[3]; // Extract ID from URL
     const data = await request.json();
     
     console.log('Received update request for bid:', id, 'with progress:', data.progress);

@@ -1,11 +1,11 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
 import { Report } from '@/lib/db/schema';
 
-export async function GET(request: Request, { params }: { params: { contractorId: string } }) {
+export async function GET(request: NextRequest) {
   try {
     await dbConnect();
-    const { contractorId } = params;
+    const contractorId = request.nextUrl.pathname.split('/')[3]; // Extract contractorId from URL
     // Find all completed reports assigned to this contractor
     const reports = await Report.find({ assignedContractor: contractorId, status: 'completed' });
     // Aggregate all ratings
