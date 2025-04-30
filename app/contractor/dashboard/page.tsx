@@ -190,9 +190,8 @@ export default function ContractorDashboard() {
                             <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
                               <div className="text-sm">
                                 <div className="flex items-center text-gray-500">
-                                  <DollarSign className="h-3 w-3 mr-1" />
                                   <span>
-                                    {tender.currency || '$'}
+                                    {tender.currency ? `${tender.currency}` : ''}
                                     {tender.costEstimate ? `${tender.costEstimate.min} - ${tender.costEstimate.max}` : 'N/A'}
                                   </span>
                                 </div>
