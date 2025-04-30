@@ -49,7 +49,24 @@ const reportSchema = new mongoose.Schema({
   progress: {
     type: Number,
     default: 0
-  }
+  },
+  ratings: [{
+    userId: {
+      type: String,
+      required: true
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5
+    },
+    comment: String,
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 });
 
 // Update the updatedAt field before saving

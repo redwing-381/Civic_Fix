@@ -33,6 +33,38 @@ interface Report {
   currency?: string;
 }
 
+interface IssueCardProps {
+  title: string;
+  description: string;
+  location: string;
+  status: string;
+  daysAgo: number;
+  progress: number;
+  id: string;
+  imageUrl?: string;
+  country: string;
+  createdAt: string;
+  updatedAt: string;
+  costEstimate?: {
+    min: number;
+    max: number;
+  };
+  currency?: string;
+  className?: string;
+  descriptionClassName?: string;
+  locationClassName?: string;
+  linkClassName?: string;
+}
+
+interface StatCardProps {
+  title: string;
+  value: string;
+  change: string;
+  trend: string;
+  icon: React.ComponentType<{ className?: string }>;
+  className?: string;
+}
+
 function DashboardContent() {
   const isMobile = useMobile()
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
@@ -85,12 +117,29 @@ function DashboardContent() {
               value={reports.length.toString()}
               change="+0%"
               trend="up"
-              icon={<FileText className="h-5 w-5" />} 
-              className="bg-card text-card-foreground border border-border"
+              icon={<FileText className="h-5 w-5" />}
             />
-            <StatCard title="In Progress" value={getStatusCount('in-progress').toString()} change="+0%" trend="up" icon={<Loader2 className="h-5 w-5" />} className="bg-card text-card-foreground border border-border" />
-            <StatCard title="Pending Approval" value={getStatusCount('pending').toString()} change="+0%" trend="down" icon={<Clock className="h-5 w-5" />} className="bg-card text-card-foreground border border-border" />
-            <StatCard title="Completed" value={getStatusCount('completed').toString()} change="+0%" trend="up" icon={<CheckCircle2 className="h-5 w-5" />} className="bg-card text-card-foreground border border-border" />
+            <StatCard 
+              title="In Progress" 
+              value={getStatusCount('in-progress').toString()} 
+              change="+0%" 
+              trend="up" 
+              icon={<Loader2 className="h-5 w-5" />}
+            />
+            <StatCard 
+              title="Pending Approval"
+              value={getStatusCount('pending').toString()}
+              change="+0%"
+              trend="down"
+              icon={<Clock className="h-5 w-5" />}
+            />
+            <StatCard
+              title="Completed"
+              value={getStatusCount('completed').toString()}
+              change="+0%"
+              trend="up" 
+              icon={<CheckCircle2 className="h-5 w-5" />}
+            />
           </div>
 
           <Tabs defaultValue={defaultTab} className="mb-6">

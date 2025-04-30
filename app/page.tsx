@@ -24,6 +24,7 @@ interface Report {
     max: number;
   };
   currency?: string;
+  ratings?: number[];
 }
 
 export default function Home() {
@@ -41,7 +42,12 @@ export default function Home() {
           throw new Error(errorData.error || 'Failed to fetch reports')
         }
         const reportsData = await reportsResponse.json()
-        setReports(reportsData)
+        console.log('Dashboard reportsData:', reportsData)
+        const reportsWithRatings = reportsData.map((report: Report) => ({
+          ...report,
+          ratings: Array.isArray(report.ratings) ? report.ratings : [],
+        }))
+        setReports(reportsWithRatings)
         setError(null)
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Failed to fetch reports')
@@ -299,45 +305,13 @@ export default function Home() {
                     About Us
                   </Link>
                 </li>
-                <li>
-                  <Link href="/faq" className="hover:text-white transition-colors">
-                    FAQ
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="hover:text-white transition-colors">
-                    Contact
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/privacy" className="hover:text-white transition-colors">
-                    Privacy Policy
-                  </Link>
-                </li>
               </ul>
             </div>
             <div>
               <h3 className="text-lg font-semibold mb-4">Resources</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <Link href="/blog" className="hover:text-white transition-colors">
-                    Blog
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/guides" className="hover:text-white transition-colors">
-                    User Guides
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/api" className="hover:text-white transition-colors">
-                    API Documentation
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/stats" className="hover:text-white transition-colors">
-                    Statistics
-                  </Link>
+                  <span className="text-gray-400">Coming Soon</span>
                 </li>
               </ul>
             </div>
@@ -345,24 +319,7 @@ export default function Home() {
               <h3 className="text-lg font-semibold mb-4">Connect</h3>
               <ul className="space-y-2 text-gray-400">
                 <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Twitter
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Facebook
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    LinkedIn
-                  </Link>
-                </li>
-                <li>
-                  <Link href="#" className="hover:text-white transition-colors">
-                    Instagram
-                  </Link>
+                  <span className="text-gray-400">Coming Soon</span>
                 </li>
               </ul>
             </div>

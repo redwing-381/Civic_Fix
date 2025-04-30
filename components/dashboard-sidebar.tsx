@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import Link from "next/link"
-import { FileText, Home, LogOut, MessageSquare, PieChart, Settings, PenToolIcon as Tool, User, X } from "lucide-react"
+import { FileText, Home, LogOut, MessageSquare, PieChart, PenToolIcon as Tool, User, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useMobile } from "@/hooks/use-mobile"
 import { usePathname } from "next/navigation"
@@ -22,7 +22,6 @@ export function DashboardSidebar({ open, setOpen }: DashboardSidebarProps) {
     { icon: <Tool className="h-5 w-5" />, label: "Contractors", href: "/contractor/dashboard" },
     { icon: <PieChart className="h-5 w-5" />, label: "Analytics", href: "/analytics" },
     { icon: <User className="h-5 w-5" />, label: "Profile", href: "/profile" },
-    { icon: <Settings className="h-5 w-5" />, label: "Settings", href: "/settings" },
   ]
 
   // Helper to determine if the item is active

@@ -30,6 +30,12 @@ interface Report {
     max: number;
   };
   currency: string;
+  ratings?: Array<{
+    userId: string;
+    rating: number;
+    comment?: string;
+    createdAt: string;
+  }>;
 }
 
 interface Bid {
@@ -46,57 +52,71 @@ export default function MyReports() {
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string>("")
+
+  const fetchReports = async () => {
+    try {
+      // Get current user ID from session or auth context
+      const userResponse = await fetch('/api/auth/session');
+      const userData = await userResponse.json();
+      if (userData?.user?.id) {
+        setCurrentUserId(userData.user.id);
+      }
+
+      console.log('Fetching reports and bids...')
+      // Fetch reports
+      const reportsResponse = await fetch('/api/reports')
+      if (!reportsResponse.ok) {
+        const errorData = await reportsResponse.json()
+        throw new Error(errorData.error || 'Failed to fetch reports')
+      }
+      const reportsData = await reportsResponse.json()
+      
+      // Fetch all bids
+      const bidsResponse = await fetch('/api/bids')
+      if (!bidsResponse.ok) {
+        throw new Error('Failed to fetch bids')
+      }
+      const bidsData = await bidsResponse.json()
+      
+      // Map bids to their reports
+      const reportsWithProgress = reportsData.map((report: Report) => {
+        // Find the associated bid for this report
+        const associatedBid = bidsData.find((bid: Bid) => 
+          bid.reportId === report._id && 
+          bid.contractor === report.assignedContractor
+        )
+        
+        // Ensure ratings is always an array
+        const ratings = Array.isArray(report.ratings) ? report.ratings : [];
+        
+        // If there's an associated bid, use its progress
+        if (associatedBid) {
+          return {
+            ...report,
+            ratings,
+            progress: associatedBid.progress
+          }
+        }
+        
+        return {
+          ...report,
+          ratings
+        }
+      })
+
+      console.log('Reports with bid progress:', reportsWithProgress)
+      setReports(reportsWithProgress)
+      setError(null)
+    } catch (error) {
+      console.error('Error fetching reports and bids:', error)
+      setError(error instanceof Error ? error.message : 'Failed to fetch reports')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        console.log('Fetching reports and bids...')
-        // Fetch reports
-        const reportsResponse = await fetch('/api/reports')
-        if (!reportsResponse.ok) {
-          const errorData = await reportsResponse.json()
-          throw new Error(errorData.error || 'Failed to fetch reports')
-        }
-        const reportsData = await reportsResponse.json()
-        
-        // Fetch all bids
-        const bidsResponse = await fetch('/api/bids')
-        if (!bidsResponse.ok) {
-          throw new Error('Failed to fetch bids')
-        }
-        const bidsData = await bidsResponse.json()
-        
-        // Map bids to their reports
-        const reportsWithProgress = reportsData.map((report: Report) => {
-          // Find the associated bid for this report
-          const associatedBid = bidsData.find((bid: Bid) => 
-            bid.reportId === report._id && 
-            bid.contractor === report.assignedContractor
-          )
-          
-          // If there's an associated bid, use its progress
-          if (associatedBid) {
-            console.log(`Found bid for report ${report.title}:`, associatedBid)
-            return {
-              ...report,
-              progress: associatedBid.progress
-            }
-          }
-          
-          return report
-        })
-
-        console.log('Reports with bid progress:', reportsWithProgress)
-        setReports(reportsWithProgress)
-        setError(null)
-      } catch (error) {
-        console.error('Error fetching reports and bids:', error)
-        setError(error instanceof Error ? error.message : 'Failed to fetch reports')
-      } finally {
-        setLoading(false)
-      }
-    }
-
     fetchReports()
   }, [])
 
@@ -203,6 +223,9 @@ export default function MyReports() {
                           updatedAt={report.updatedAt}
                           costEstimate={report.costEstimate}
                           currency={report.currency}
+                          ratings={report.ratings}
+                          currentUserId={currentUserId}
+                          onRatingSubmit={fetchReports}
                         />
                       );
                     })}

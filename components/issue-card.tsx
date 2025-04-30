@@ -1,12 +1,13 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { MapPin, Clock, AlertTriangle, CheckCircle2, Loader2, Calendar, DollarSign } from "lucide-react"
+import { MapPin, Clock, AlertTriangle, CheckCircle2, Loader2, Calendar, DollarSign, Star } from "lucide-react"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useState } from "react"
+import { RatingSystem } from "@/components/rating-system"
 
 interface IssueCardProps {
   title: string
@@ -25,6 +26,19 @@ interface IssueCardProps {
     max: number
   }
   currency?: string
+  ratings?: Array<{
+    userId: string
+    rating: number
+    comment?: string
+    createdAt: string
+  }>
+  currentUserId?: string
+  onRatingSubmit?: () => void
+  canRate?: boolean
+  className?: string
+  descriptionClassName?: string
+  locationClassName?: string
+  linkClassName?: string
 }
 
 export function IssueCard({ 
@@ -40,9 +54,26 @@ export function IssueCard({
   createdAt,
   updatedAt,
   costEstimate,
-  currency
+  currency,
+  ratings = [],
+  currentUserId,
+  onRatingSubmit,
+  canRate,
+  className,
+  descriptionClassName,
+  locationClassName,
+  linkClassName
 }: IssueCardProps) {
   const [showDetails, setShowDetails] = useState(false);
+  const [showRating, setShowRating] = useState(false);
+
+  // Calculate average rating
+  const averageRating = ratings.length > 0
+    ? (ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(1)
+    : null;
+
+  // Check if current user has rated
+  const userRating = currentUserId ? ratings.find(r => r.userId === currentUserId) : null;
 
   // Log the received progress value
   console.log(`IssueCard ${title} received progress:`, progress);
@@ -100,7 +131,7 @@ export function IssueCard({
         <Card className="h-full flex flex-col">
           <div className="h-40 bg-gray-100 relative">
             <img
-              src={imageUrl || "/placeholder.svg?height=160&width=320"}
+              src={imageUrl || "/avatar.png"}
               alt={title}
               className="w-full h-full object-cover"
             />

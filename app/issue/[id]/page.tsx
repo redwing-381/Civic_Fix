@@ -111,7 +111,7 @@ export default function IssueDetail({ params }: { params: Promise<{ id: string }
         user: {
           name: "Sarah Johnson",
           role: "Inspector",
-          avatar: "/placeholder.svg?height=40&width=40&text=SJ",
+          avatar: "/avatar.png",
         },
         text: "I've verified this issue and it's a priority for repair. The pothole is causing significant traffic disruption.",
         date: "May 10, 2023",
@@ -122,7 +122,7 @@ export default function IssueDetail({ params }: { params: Promise<{ id: string }
         user: {
           name: "Michael Chen",
           role: "Department of Public Works",
-          avatar: "/placeholder.svg?height=40&width=40&text=MC",
+          avatar: "/avatar.png",
         },
         text: "Cost estimate has been completed. This will require approximately 2 cubic yards of asphalt and 4 hours of labor.",
         date: "May 11, 2023",
@@ -133,7 +133,7 @@ export default function IssueDetail({ params }: { params: Promise<{ id: string }
         user: {
           name: "Robert Smith",
           role: "ABC Construction",
-          avatar: "/placeholder.svg?height=40&width=40&text=RS",
+          avatar: "/avatar.png",
         },
         text: "We've started the repair work. We'll need to close one lane of traffic temporarily. Expected completion in 2 days.",
         date: "May 14, 2023",
@@ -280,7 +280,7 @@ export default function IssueDetail({ params }: { params: Promise<{ id: string }
                                 className="rounded-lg overflow-hidden border border-gray-200"
                               >
                                 <img
-                                  src={image || "/placeholder.svg"}
+                                  src={image || "/avatar.png"}
                                   alt={`Issue ${index + 1}`}
                                   className="w-full h-48 object-cover"
                                 />
@@ -354,7 +354,7 @@ export default function IssueDetail({ params }: { params: Promise<{ id: string }
                               <div key={comment.id} className="flex gap-4 p-4 rounded-lg bg-gray-50">
                                 <Avatar>
                                   <AvatarImage
-                                    src={comment.user.avatar || "/placeholder.svg"}
+                                    src={comment.user.avatar || "/avatar.png"}
                                     alt={comment.user.name}
                                   />
                                   <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>

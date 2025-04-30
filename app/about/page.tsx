@@ -241,19 +241,19 @@ export default function AboutPage() {
                       name: "Sarah Johnson",
                       role: "Founder & CEO",
                       bio: "Former urban planner with 15 years of experience in local government.",
-                      avatar: "/placeholder.svg?height=100&width=100&text=SJ",
+                      avatar: "/avatar.png",
                     },
                     {
                       name: "Michael Chen",
                       role: "CTO",
                       bio: "Software engineer with a passion for civic technology and open data.",
-                      avatar: "/placeholder.svg?height=100&width=100&text=MC",
+                      avatar: "/avatar.png",
                     },
                     {
                       name: "Robert Smith",
                       role: "COO",
                       bio: "Former public works director with expertise in infrastructure management.",
-                      avatar: "/placeholder.svg?height=100&width=100&text=RS",
+                      avatar: "/avatar.png",
                     },
                   ].map((person, index) => (
                     <motion.div
@@ -266,7 +266,7 @@ export default function AboutPage() {
                     >
                       <div className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-4">
                         <img
-                          src={person.avatar || "/placeholder.svg"}
+                          src={person.avatar || "/avatar.png"}
                           alt={person.name}
                           className="w-full h-full object-cover"
                         />

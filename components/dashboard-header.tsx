@@ -83,7 +83,7 @@ export function DashboardHeader({ setSidebarOpen }: DashboardHeaderProps) {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
+                <AvatarImage src="/avatar.png" alt="User" />
                 <AvatarFallback>JD</AvatarFallback>
               </Avatar>
             </Button>
@@ -94,11 +94,6 @@ export function DashboardHeader({ setSidebarOpen }: DashboardHeaderProps) {
             <DropdownMenuItem>
               <Link href="/dashboard?tab=profile" className="w-full">
                 Profile
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Link href="/dashboard?tab=settings" className="w-full">
-                Settings
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem>
