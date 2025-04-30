@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { FileText, MessageSquare, User, Clock, CheckCircle2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,11 +14,57 @@ import { StatCard } from "@/components/stat-card"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 
+interface Report {
+  _id: string;
+  title: string;
+  description: string;
+  location: string;
+  status: "urgent" | "pending" | "in-progress" | "bidding" | "completed";
+  createdAt: string;
+  updatedAt: string;
+  progress?: number;
+  assignedContractor?: string;
+  imageUrl?: string;
+  country: string;
+  costEstimate?: {
+    min: number;
+    max: number;
+  };
+  currency?: string;
+}
+
 function DashboardContent() {
   const isMobile = useMobile()
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
   const searchParams = useSearchParams()
   const defaultTab = searchParams.get("tab") || "recent"
+  const [reports, setReports] = useState<Report[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const reportsResponse = await fetch('/api/reports')
+        if (!reportsResponse.ok) {
+          const errorData = await reportsResponse.json()
+          throw new Error(errorData.error || 'Failed to fetch reports')
+        }
+        const reportsData = await reportsResponse.json()
+        setReports(reportsData)
+        setError(null)
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to fetch reports')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchReports()
+  }, [])
+
+  const getStatusCount = (status: string) => {
+    return reports.filter(report => report.status === status).length
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -36,26 +82,13 @@ function DashboardContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatCard
               title="Total Reports"
-              value="124"
-              change="+12%"
+              value={reports.length.toString()}
+              change="+0%"
               trend="up"
-              icon={<FileText className="h-5 w-5" />}
-            />
-            <StatCard title="In Progress" value="38" change="+5%" trend="up" icon={<Loader2 className="h-5 w-5" />} />
-            <StatCard
-              title="Pending Approval"
-              value="17"
-              change="-2%"
-              trend="down"
-              icon={<Clock className="h-5 w-5" />}
-            />
-            <StatCard
-              title="Completed"
-              value="69"
-              change="+8%"
-              trend="up"
-              icon={<CheckCircle2 className="h-5 w-5" />}
-            />
+              icon={<FileText className="h-5 w-5" />} />
+            <StatCard title="In Progress" value={getStatusCount('in-progress').toString()} change="+0%" trend="up" icon={<Loader2 className="h-5 w-5" />} />
+            <StatCard title="Pending Approval" value={getStatusCount('pending').toString()} change="+0%" trend="down" icon={<Clock className="h-5 w-5" />} />
+            <StatCard title="Completed" value={getStatusCount('completed').toString()} change="+0%" trend="up" icon={<CheckCircle2 className="h-5 w-5" />} />
           </div>
 
           <Tabs defaultValue={defaultTab} className="mb-6">
@@ -69,138 +102,123 @@ function DashboardContent() {
 
             <TabsContent value="recent" className="mt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <IssueCard
-                  title="Broken Water Main"
-                  description="Water leaking onto the street causing traffic hazards"
-                  location="123 Main St, Downtown"
-                  status="urgent"
-                  daysAgo={1}
-                  progress={15}
-                  id="1"
-                />
-                <IssueCard
-                  title="Pothole Damage"
-                  description="Large pothole causing vehicle damage"
-                  location="456 Oak Ave, Westside"
-                  status="in-progress"
-                  daysAgo={3}
-                  progress={45}
-                  id="2"
-                />
-                <IssueCard
-                  title="Fallen Tree"
-                  description="Tree blocking sidewalk after storm"
-                  location="789 Pine St, Northside"
-                  status="bidding"
-                  daysAgo={2}
-                  progress={30}
-                  id="3"
-                />
-                <IssueCard
-                  title="Street Light Out"
-                  description="Street light not working for past week"
-                  location="101 Elm St, Eastside"
-                  status="pending"
-                  daysAgo={5}
-                  progress={10}
-                  id="4"
-                />
-                <IssueCard
-                  title="Graffiti Removal"
-                  description="Offensive graffiti on public building"
-                  location="202 Maple Dr, Southside"
-                  status="completed"
-                  daysAgo={7}
-                  progress={100}
-                  id="5"
-                />
-                <IssueCard
-                  title="Damaged Guardrail"
-                  description="Guardrail damaged in accident"
-                  location="303 Cedar Ln, Highway 101"
-                  status="in-progress"
-                  daysAgo={4}
-                  progress={60}
-                  id="6"
-                />
+                {loading ? (
+                  <div className="flex justify-center items-center h-32">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : reports.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No issues found.</p>
+                  </div>
+                ) : (
+                  reports.slice(0, 6).map((report) => (
+                    <IssueCard
+                      key={report._id}
+                      title={report.title}
+                      description={report.description}
+                      location={report.location}
+                      status={report.status}
+                      daysAgo={Math.floor((new Date().getTime() - new Date(report.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                      progress={report.progress ?? (report.status === 'completed' ? 100 : report.status === 'in-progress' ? 50 : 10)}
+                      id={report._id}
+                      imageUrl={report.imageUrl}
+                      country={report.country}
+                      createdAt={report.createdAt}
+                      updatedAt={report.updatedAt}
+                      costEstimate={report.costEstimate}
+                      currency={report.currency}
+                    />
+                  ))
+                )}
               </div>
             </TabsContent>
 
             <TabsContent value="urgent">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <IssueCard
-                  title="Broken Water Main"
-                  description="Water leaking onto the street causing traffic hazards"
-                  location="123 Main St, Downtown"
-                  status="urgent"
-                  daysAgo={1}
-                  progress={15}
-                  id="1"
-                />
-                <IssueCard
-                  title="Gas Leak Suspected"
-                  description="Strong smell of gas in residential area"
-                  location="505 Birch St, Westside"
-                  status="urgent"
-                  daysAgo={0}
-                  progress={5}
-                  id="7"
-                />
-                <IssueCard
-                  title="Downed Power Line"
-                  description="Power line on road after storm"
-                  location="707 Willow Ave, Eastside"
-                  status="urgent"
-                  daysAgo={0}
-                  progress={20}
-                  id="8"
-                />
+                {reports.filter(r => r.status === 'urgent').length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No urgent issues found.</p>
+                  </div>
+                ) : (
+                  reports.filter(r => r.status === 'urgent').map((report) => (
+                    <IssueCard
+                      key={report._id}
+                      title={report.title}
+                      description={report.description}
+                      location={report.location}
+                      status={report.status}
+                      daysAgo={Math.floor((new Date().getTime() - new Date(report.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                      progress={report.progress ?? (report.status === 'completed' ? 100 : report.status === 'in-progress' ? 50 : 10)}
+                      id={report._id}
+                      imageUrl={report.imageUrl}
+                      country={report.country}
+                      createdAt={report.createdAt}
+                      updatedAt={report.updatedAt}
+                      costEstimate={report.costEstimate}
+                      currency={report.currency}
+                    />
+                  ))
+                )}
               </div>
             </TabsContent>
 
             <TabsContent value="nearby">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <IssueCard
-                  title="Pothole Damage"
-                  description="Large pothole causing vehicle damage"
-                  location="456 Oak Ave, Westside"
-                  status="in-progress"
-                  daysAgo={3}
-                  progress={45}
-                  id="2"
-                />
-                <IssueCard
-                  title="Street Light Out"
-                  description="Street light not working for past week"
-                  location="101 Elm St, Eastside"
-                  status="pending"
-                  daysAgo={5}
-                  progress={10}
-                  id="4"
-                />
+                {/* You can implement location-based filtering here if you have user location info */}
+                {reports.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No nearby issues found.</p>
+                  </div>
+                ) : (
+                  reports.slice(0, 2).map((report) => (
+                    <IssueCard
+                      key={report._id}
+                      title={report.title}
+                      description={report.description}
+                      location={report.location}
+                      status={report.status}
+                      daysAgo={Math.floor((new Date().getTime() - new Date(report.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                      progress={report.progress ?? (report.status === 'completed' ? 100 : report.status === 'in-progress' ? 50 : 10)}
+                      id={report._id}
+                      imageUrl={report.imageUrl}
+                      country={report.country}
+                      createdAt={report.createdAt}
+                      updatedAt={report.updatedAt}
+                      costEstimate={report.costEstimate}
+                      currency={report.currency}
+                    />
+                  ))
+                )}
               </div>
             </TabsContent>
 
             <TabsContent value="following">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <IssueCard
-                  title="Fallen Tree"
-                  description="Tree blocking sidewalk after storm"
-                  location="789 Pine St, Northside"
-                  status="bidding"
-                  daysAgo={2}
-                  progress={30}
-                  id="3"
-                />
-                <IssueCard
-                  title="Damaged Guardrail"
-                  description="Guardrail damaged in accident"
-                  location="303 Cedar Ln, Highway 101"
-                  status="in-progress"
-                  daysAgo={4}
-                  progress={60}
-                  id="6"
-                />
+                {/* You can implement following logic here if you have user following info */}
+                {reports.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No followed issues found.</p>
+                  </div>
+                ) : (
+                  reports.slice(0, 2).map((report) => (
+                    <IssueCard
+                      key={report._id}
+                      title={report.title}
+                      description={report.description}
+                      location={report.location}
+                      status={report.status}
+                      daysAgo={Math.floor((new Date().getTime() - new Date(report.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                      progress={report.progress ?? (report.status === 'completed' ? 100 : report.status === 'in-progress' ? 50 : 10)}
+                      id={report._id}
+                      imageUrl={report.imageUrl}
+                      country={report.country}
+                      createdAt={report.createdAt}
+                      updatedAt={report.updatedAt}
+                      costEstimate={report.costEstimate}
+                      currency={report.currency}
+                    />
+                  ))
+                )}
               </div>
             </TabsContent>
 

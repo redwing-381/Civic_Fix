@@ -39,11 +39,25 @@ export default function ContractorDashboard() {
   useEffect(() => {
     const fetchTenders = async () => {
       try {
+        // Fetch reports
         const response = await fetch("/api/reports")
         if (!response.ok) throw new Error("Failed to fetch tenders")
-        const data = await response.json()
-        // Only show reports with status 'pending' or 'bidding'
-        const filtered = data.filter((r: any) => r.status === 'pending' || r.status === 'bidding')
+        const reports = await response.json()
+        
+        // Fetch all active bids
+        const bidsResponse = await fetch('/api/bids')
+        if (!bidsResponse.ok) throw new Error("Failed to fetch bids")
+        const bids = await bidsResponse.json()
+        
+        // Get report IDs that have active bids
+        const reportsWithBids = new Set(bids.map((bid: any) => bid.reportId))
+        
+        // Filter reports to only show those without active bids and with status 'pending' or 'bidding'
+        const filtered = reports.filter((r: any) => 
+          (r.status === 'pending' || r.status === 'bidding') && 
+          !reportsWithBids.has(r._id)
+        )
+        
         setTenders(filtered)
         setError(null)
       } catch (e: any) {
@@ -93,22 +107,34 @@ export default function ContractorDashboard() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <StatCard title="Active Projects" value="8" change="+2" trend="up" icon={<Hammer className="h-5 w-5" />} />
+            <StatCard 
+              title="Active Projects" 
+              value={activeBids.length.toString()} 
+              change="+0" 
+              trend="up" 
+              icon={<Hammer className="h-5 w-5" />} 
+            />
             <StatCard
               title="Available Tenders"
               value={tenders.length.toString()}
-              change="+5"
+              change="+0"
               trend="up"
               icon={<FileText className="h-5 w-5" />}
             />
             <StatCard
               title="Completed Projects"
-              value="142"
-              change="+12"
+              value="0"
+              change="+0"
               trend="up"
               icon={<CheckCircle2 className="h-5 w-5" />}
             />
-            <StatCard title="Rating" value="4.8/5" change="+0.2" trend="up" icon={<Star className="h-5 w-5" />} />
+            <StatCard 
+              title="Rating" 
+              value="0/5" 
+              change="+0" 
+              trend="up" 
+              icon={<Star className="h-5 w-5" />} 
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -347,7 +373,6 @@ export default function ContractorDashboard() {
                                   className="bg-teal-600 hover:bg-teal-700"
                                   onClick={async () => {
                                     try {
-                                      console.log('Updating progress for bid:', item._id, 'to:', item.progress);
                                       const response = await fetch(`/api/bids/${item._id}/progress`, {
                                         method: 'PATCH',
                                         headers: { 'Content-Type': 'application/json' },
@@ -359,30 +384,24 @@ export default function ContractorDashboard() {
                                       }
                                       
                                       const data = await response.json();
-                                      console.log('Update response:', data);
                                       
-                                      // Update both bid and report in the UI
                                       setActiveBids((prev) => prev.map((b) => {
                                         if (b._id === item._id) {
-                                          const updated = { 
+                                          return { 
                                             ...b, 
                                             progress: item.progress,
                                             report: data.report 
                                           };
-                                          console.log('Updated bid in UI:', updated);
-                                          return updated;
                                         }
                                         return b;
                                       }));
 
-                                      // Show success modal
                                       setSuccessModal({ 
                                         open: true, 
                                         message: `Progress updated to ${item.progress}% successfully!` 
                                       });
                                     } catch (error) {
                                       console.error('Error updating progress:', error);
-                                      // Revert the UI change if the update failed
                                       setActiveBids((prev) => prev.map((b) => b._id === item._id ? { ...b, progress: item.progress } : b));
                                     }
                                   }}
@@ -424,53 +443,25 @@ export default function ContractorDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    {
-                      title: "Bid Submission",
-                      project: "Street Light Replacement",
-                      deadline: "Today, 5:00 PM",
-                      urgent: true,
-                    },
-                    {
-                      title: "Progress Update",
-                      project: "Pothole Repair - Main Street",
-                      deadline: "Tomorrow, 12:00 PM",
-                      urgent: false,
-                    },
-                    {
-                      title: "Final Inspection",
-                      project: "Guardrail Installation",
-                      deadline: "May 25, 3:00 PM",
-                      urgent: false,
-                    },
-                    {
-                      title: "Material Procurement",
-                      project: "Sidewalk Replacement",
-                      deadline: "May 20, 10:00 AM",
-                      urgent: false,
-                    },
-                  ].map((deadline, index) => (
-                    <div
-                      key={index}
-                      className={`p-3 rounded-lg border ${
-                        deadline.urgent ? "border-red-200 bg-red-50" : "border-gray-200"
-                      } hover:border-gray-300 transition-colors`}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-gray-800">{deadline.title}</h4>
-                        {deadline.urgent && (
-                          <Badge variant="destructive" className="text-xs">
-                            Urgent
-                          </Badge>
-                        )}
+                  {activeBids.length === 0 ? (
+                    <div className="text-center text-gray-500">No upcoming deadlines</div>
+                  ) : (
+                    activeBids.map((item) => (
+                      <div
+                        key={item._id}
+                        className="p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-medium text-gray-800">Progress Update</h4>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">Project: {item.report?.title || 'Unknown Project'}</p>
+                        <div className="flex items-center text-xs font-medium">
+                          <Clock className="h-3 w-3 mr-1 text-gray-400" />
+                          <span className="text-gray-500">Due: {new Date(item.report?.createdAt).toLocaleDateString()}</span>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">Project: {deadline.project}</p>
-                      <div className="flex items-center text-xs font-medium">
-                        <Clock className="h-3 w-3 mr-1 text-gray-400" />
-                        <span className={deadline.urgent ? "text-red-500" : "text-gray-500"}>{deadline.deadline}</span>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
               <CardFooter>
