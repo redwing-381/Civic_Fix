@@ -35,6 +35,11 @@ export default function ContractorDashboard() {
   const [activeBidsLoading, setActiveBidsLoading] = useState(true)
   const [detailsModal, setDetailsModal] = useState<{ open: boolean, project: any | null }>({ open: false, project: null })
   const [successModal, setSuccessModal] = useState<{ open: boolean, message: string }>({ open: false, message: '' })
+  const [stats, setStats] = useState({
+    completedProjects: 0,
+    averageRating: 0,
+    totalRatings: 0
+  })
 
   useEffect(() => {
     const fetchTenders = async () => {
@@ -84,6 +89,22 @@ export default function ContractorDashboard() {
           return { ...bid, report }
         })
         setActiveBids(merged)
+
+        // Calculate completed projects and ratings
+        const completedProjects = merged.filter((bid: any) => bid.report?.status === 'completed').length
+        const allRatings = merged
+          .filter((bid: any) => bid.report?.ratings)
+          .flatMap((bid: any) => bid.report.ratings)
+        const totalRatings = allRatings.length
+        const averageRating = totalRatings > 0 
+          ? (allRatings.reduce((sum: number, r: any) => sum + r.rating, 0) / totalRatings).toFixed(1)
+          : '0.0'
+
+        setStats({
+          completedProjects,
+          averageRating: parseFloat(averageRating),
+          totalRatings
+        })
       } catch (e) {
         setActiveBids([])
       } finally {
@@ -123,15 +144,15 @@ export default function ContractorDashboard() {
             />
             <StatCard
               title="Completed Projects"
-              value="0"
+              value={stats.completedProjects.toString()}
               change="+0"
               trend="up"
               icon={<CheckCircle2 className="h-5 w-5" />}
             />
             <StatCard 
               title="Rating" 
-              value="0/5" 
-              change="+0" 
+              value={`${stats.averageRating}/5`} 
+              change={`(${stats.totalRatings} ratings)`} 
               trend="up" 
               icon={<Star className="h-5 w-5" />} 
             />
