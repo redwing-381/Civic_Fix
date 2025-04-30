@@ -191,13 +191,13 @@ export default function Analytics() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-background flex">
       <DashboardSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-background text-foreground">
         <DashboardHeader setSidebarOpen={setSidebarOpen} />
 
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
+        <main className="flex-1 p-4 md:p-6 overflow-auto bg-background text-foreground">
           <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-800">Analytics Dashboard</h1>
@@ -222,7 +222,7 @@ export default function Analytics() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <Card>
+            <Card className="bg-card text-card-foreground">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-2">
                   <p className="text-sm font-medium text-gray-500">Total Issues</p>
@@ -237,7 +237,7 @@ export default function Analytics() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-card text-card-foreground">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-2">
                   <p className="text-sm font-medium text-gray-500">Completed Issues</p>
@@ -252,7 +252,7 @@ export default function Analytics() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-card text-card-foreground">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-2">
                   <p className="text-sm font-medium text-gray-500">In Progress</p>
@@ -267,7 +267,7 @@ export default function Analytics() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-card text-card-foreground">
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-2">
                   <p className="text-sm font-medium text-gray-500">Avg. Resolution Time</p>
@@ -285,7 +285,7 @@ export default function Analytics() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <Card>
+            <Card className="bg-card text-card-foreground">
               <CardHeader>
                 <CardTitle>Issue Trends</CardTitle>
                 <CardDescription>Number of issues reported over time</CardDescription>
@@ -305,7 +305,7 @@ export default function Analytics() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-card text-card-foreground">
               <CardHeader>
                 <CardTitle>Issues by Status</CardTitle>
                 <CardDescription>Number of issues in each status</CardDescription>
@@ -327,7 +327,7 @@ export default function Analytics() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <Card>
+            <Card className="bg-card text-card-foreground">
               <CardHeader>
                 <CardTitle>Issue Categories</CardTitle>
                 <CardDescription>Distribution by type</CardDescription>
@@ -357,7 +357,7 @@ export default function Analytics() {
               </CardContent>
             </Card>
 
-            <Card className="lg:col-span-2">
+            <Card className="lg:col-span-2 bg-card text-card-foreground">
               <CardHeader>
                 <CardTitle>Geographic Distribution</CardTitle>
                 <CardDescription>Issues by location</CardDescription>

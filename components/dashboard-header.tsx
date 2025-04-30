@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
+import ThemeToggle from './theme-toggle'
 
 interface DashboardHeaderProps {
   setSidebarOpen: (open: boolean) => void
@@ -33,6 +34,7 @@ export function DashboardHeader({ setSidebarOpen }: DashboardHeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
+        <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">

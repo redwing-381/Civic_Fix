@@ -49,7 +49,7 @@ export function DashboardSidebar({ open, setOpen }: DashboardSidebarProps) {
             animate={{ x: 0 }}
             exit={{ x: -280 }}
             transition={{ duration: 0.15, ease: "easeInOut" }}
-            className={`fixed md:sticky top-0 left-0 z-50 h-full w-64 bg-white border-r flex flex-col`}
+            className={`fixed md:sticky top-0 left-0 z-50 h-full w-64 bg-card text-card-foreground border-r flex flex-col`}
           >
             <div className="h-16 border-b flex items-center px-4">
               <div className="flex items-center gap-2">
@@ -88,8 +88,8 @@ export function DashboardSidebar({ open, setOpen }: DashboardSidebarProps) {
                       <Link
                         href={item.href}
                         onClick={() => isMobile && setOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors duration-150 ${
-                          isActive(item.href) ? "bg-gray-100 font-medium" : ""
+                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-foreground hover:bg-muted active:bg-muted transition-colors duration-150 ${
+                          isActive(item.href) ? "bg-muted font-medium" : ""
                         }`}
                       >
                         {item.icon}
@@ -105,7 +105,7 @@ export function DashboardSidebar({ open, setOpen }: DashboardSidebarProps) {
               <Link
                 href="/login"
                 onClick={() => isMobile && setOpen(false)}
-                className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-colors duration-150"
+                className="flex items-center gap-3 w-full px-3 py-2 rounded-md text-foreground hover:bg-muted active:bg-muted transition-colors duration-150"
               >
                 <LogOut className="h-5 w-5" />
                 <span>Log Out</span>

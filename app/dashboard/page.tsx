@@ -67,16 +67,16 @@ function DashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-background flex">
       <DashboardSidebar open={sidebarOpen} setOpen={setSidebarOpen} />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col bg-background text-foreground">
         <DashboardHeader setSidebarOpen={setSidebarOpen} />
 
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
+        <main className="flex-1 p-4 md:p-6 overflow-auto bg-background text-foreground">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-            <p className="text-gray-500">Welcome back, John Doe</p>
+            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back, John Doe</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -85,10 +85,12 @@ function DashboardContent() {
               value={reports.length.toString()}
               change="+0%"
               trend="up"
-              icon={<FileText className="h-5 w-5" />} />
-            <StatCard title="In Progress" value={getStatusCount('in-progress').toString()} change="+0%" trend="up" icon={<Loader2 className="h-5 w-5" />} />
-            <StatCard title="Pending Approval" value={getStatusCount('pending').toString()} change="+0%" trend="down" icon={<Clock className="h-5 w-5" />} />
-            <StatCard title="Completed" value={getStatusCount('completed').toString()} change="+0%" trend="up" icon={<CheckCircle2 className="h-5 w-5" />} />
+              icon={<FileText className="h-5 w-5" />} 
+              className="bg-card text-card-foreground border border-border"
+            />
+            <StatCard title="In Progress" value={getStatusCount('in-progress').toString()} change="+0%" trend="up" icon={<Loader2 className="h-5 w-5" />} className="bg-card text-card-foreground border border-border" />
+            <StatCard title="Pending Approval" value={getStatusCount('pending').toString()} change="+0%" trend="down" icon={<Clock className="h-5 w-5" />} className="bg-card text-card-foreground border border-border" />
+            <StatCard title="Completed" value={getStatusCount('completed').toString()} change="+0%" trend="up" icon={<CheckCircle2 className="h-5 w-5" />} className="bg-card text-card-foreground border border-border" />
           </div>
 
           <Tabs defaultValue={defaultTab} className="mb-6">
@@ -127,6 +129,10 @@ function DashboardContent() {
                       updatedAt={report.updatedAt}
                       costEstimate={report.costEstimate}
                       currency={report.currency}
+                      className="bg-card text-card-foreground border border-border"
+                      descriptionClassName="text-muted-foreground"
+                      locationClassName="text-muted-foreground"
+                      linkClassName="text-primary"
                     />
                   ))
                 )}

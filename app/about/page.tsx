@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -8,9 +8,52 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, CheckCircle2, FileText, PenToolIcon as Tool, Shield, Users } from "lucide-react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
+import { IssueCard } from "@/components/issue-card"
+
+interface Report {
+  _id: string;
+  title: string;
+  description: string;
+  location: string;
+  status: "urgent" | "pending" | "in-progress" | "bidding" | "completed";
+  createdAt: string;
+  updatedAt: string;
+  progress?: number;
+  assignedContractor?: string;
+  imageUrl?: string;
+  country: string;
+  costEstimate?: {
+    min: number;
+    max: number;
+  };
+  currency?: string;
+}
 
 export default function AboutPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [reports, setReports] = useState<Report[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const reportsResponse = await fetch('/api/reports')
+        if (!reportsResponse.ok) {
+          const errorData = await reportsResponse.json()
+          throw new Error(errorData.error || 'Failed to fetch reports')
+        }
+        const reportsData = await reportsResponse.json()
+        setReports(reportsData)
+        setError(null)
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to fetch reports')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchReports()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -40,6 +83,40 @@ export default function AboutPage() {
                   believe that by streamlining the reporting and resolution process, we can help build better, safer,
                   and more responsive communities.
                 </p>
+              </section>
+
+              <section>
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">Real Community Issues</h2>
+                {loading ? (
+                  <div className="flex justify-center items-center h-32">
+                    <span>Loading issues...</span>
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-8 text-red-500">{error}</div>
+                ) : reports.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">No issues found.</div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {reports.filter(r => r.imageUrl && r.imageUrl.trim() !== "").slice(0, 3).map((report) => (
+                      <IssueCard
+                        key={report._id}
+                        title={report.title}
+                        description={report.description}
+                        location={report.location}
+                        status={report.status}
+                        daysAgo={Math.floor((new Date().getTime() - new Date(report.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                        progress={report.progress ?? (report.status === 'completed' ? 100 : report.status === 'in-progress' ? 50 : 10)}
+                        id={report._id}
+                        imageUrl={report.imageUrl}
+                        country={report.country}
+                        createdAt={report.createdAt}
+                        updatedAt={report.updatedAt}
+                        costEstimate={report.costEstimate}
+                        currency={report.currency}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
 
               <section>

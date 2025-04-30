@@ -1,13 +1,56 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, MapPin, PenToolIcon as Tool, UserCog, Users } from "lucide-react"
+import { IssueCard } from "@/components/issue-card"
+
+interface Report {
+  _id: string;
+  title: string;
+  description: string;
+  location: string;
+  status: "urgent" | "pending" | "in-progress" | "bidding" | "completed";
+  createdAt: string;
+  updatedAt: string;
+  progress?: number;
+  assignedContractor?: string;
+  imageUrl?: string;
+  country: string;
+  costEstimate?: {
+    min: number;
+    max: number;
+  };
+  currency?: string;
+}
 
 export default function Home() {
   const [isHovered, setIsHovered] = useState(false)
+  const [reports, setReports] = useState<Report[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const reportsResponse = await fetch('/api/reports')
+        if (!reportsResponse.ok) {
+          const errorData = await reportsResponse.json()
+          throw new Error(errorData.error || 'Failed to fetch reports')
+        }
+        const reportsData = await reportsResponse.json()
+        setReports(reportsData)
+        setError(null)
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Failed to fetch reports')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchReports()
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50 to-white">
@@ -81,7 +124,7 @@ export default function Home() {
             >
               <div className="absolute inset-0 bg-gradient-to-br from-teal-500/20 to-emerald-500/20 z-10"></div>
               <img
-                src="/placeholder.svg?height=400&width=600"
+                src="/civicfix.png?height=400&width=600"
                 alt="City infrastructure being repaired"
                 className="w-full h-full object-cover"
               />
@@ -139,65 +182,36 @@ export default function Home() {
             </p>
           </div>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          >
-            {[
-              {
-                title: "Pothole on Main Street",
-                status: "In Progress",
-                location: "Downtown, Main St & 5th Ave",
-                days: 3,
-                statusColor: "bg-amber-500",
-              },
-              {
-                title: "Broken Street Light",
-                status: "Bidding",
-                location: "Westside, Park Avenue",
-                days: 1,
-                statusColor: "bg-blue-500",
-              },
-              {
-                title: "Damaged Sidewalk",
-                status: "Completed",
-                location: "Northside, Elm Street",
-                days: 7,
-                statusColor: "bg-green-500",
-              },
-            ].map((issue, index) => (
-              <motion.div key={index} whileHover={{ y: -5 }} className="bg-white rounded-lg overflow-hidden shadow-md">
-                <div className="h-48 bg-gray-200 relative">
-                  <img
-                    src={`/placeholder.svg?height=200&width=400&text=Issue+${index + 1}`}
-                    alt={issue.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div
-                    className={`absolute top-3 right-3 ${issue.statusColor} text-white text-sm font-medium py-1 px-3 rounded-full`}
-                  >
-                    {issue.status}
-                  </div>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-semibold text-lg mb-2">{issue.title}</h3>
-                  <div className="flex items-center text-gray-500 mb-3">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    <span className="text-sm">{issue.location}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">{issue.days} days ago</span>
-                    <Button variant="ghost" size="sm" className="text-teal-600 hover:text-teal-700">
-                      <Link href={`/issue/${index + 1}`}>View Details</Link>
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+          {loading ? (
+            <div className="flex justify-center items-center h-32">
+              <span>Loading issues...</span>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8 text-red-500">{error}</div>
+          ) : reports.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No issues found.</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {reports.filter(r => r.imageUrl && r.imageUrl.trim() !== "").slice(0, 3).map((report) => (
+                <IssueCard
+                  key={report._id}
+                  title={report.title}
+                  description={report.description}
+                  location={report.location}
+                  status={report.status}
+                  daysAgo={Math.floor((new Date().getTime() - new Date(report.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                  progress={report.progress ?? (report.status === 'completed' ? 100 : report.status === 'in-progress' ? 50 : 10)}
+                  id={report._id}
+                  imageUrl={report.imageUrl}
+                  country={report.country}
+                  createdAt={report.createdAt}
+                  updatedAt={report.updatedAt}
+                  costEstimate={report.costEstimate}
+                  currency={report.currency}
+                />
+              ))}
+            </div>
+          )}
 
           <div className="text-center mt-10">
             <Button asChild variant="outline">
