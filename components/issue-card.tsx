@@ -118,8 +118,26 @@ export function IssueCard({
               <CardTitle className="text-xl font-semibold">
                 {title}
               </CardTitle>
-              <Badge variant="secondary" className={statusDetails.color}>
-                {statusDetails.icon} {statusDetails.label}
+              <Badge
+                variant="secondary"
+                className={cn(
+                  statusDetails.color,
+                  "px-3 py-1 rounded-full flex items-center gap-1 text-sm font-semibold shadow-md",
+                  status === "in-progress"
+                    ? "bg-gradient-to-r from-blue-100 to-blue-50 border-0 text-blue-700"
+                    : status === "pending"
+                    ? "bg-gradient-to-r from-yellow-100 to-yellow-50 border-0 text-yellow-700"
+                    : status === "completed"
+                    ? "bg-gradient-to-r from-green-100 to-green-50 border-0 text-green-700"
+                    : status === "urgent"
+                    ? "bg-gradient-to-r from-red-100 to-red-50 border-0 text-red-700"
+                    : "bg-gradient-to-r from-gray-100 to-gray-50 border-0 text-gray-700",
+                  "transition-transform duration-150 hover:scale-105"
+                )}
+                style={{ minWidth: 110, justifyContent: 'center' }}
+              >
+                <span className="mr-1 flex items-center">{statusDetails.icon}</span>
+                {statusDetails.label}
               </Badge>
             </div>
           </CardHeader>

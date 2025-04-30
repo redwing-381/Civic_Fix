@@ -153,24 +153,27 @@ export default function Home() {
             <div className="text-center py-8 text-gray-500">No issues found.</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {reports.filter(r => r.imageUrl && r.imageUrl.trim() !== "").map((report) => (
-                <IssueCard
-                  key={report._id}
-                  title={report.title}
-                  description={report.description}
-                  location={report.location}
-                  status={report.status}
-                  daysAgo={Math.floor((new Date().getTime() - new Date(report.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
-                  progress={report.progress ?? (report.status === 'completed' ? 100 : report.status === 'in-progress' ? 50 : 10)}
-                  id={report._id}
-                  imageUrl={report.imageUrl}
-                  country={report.country}
-                  createdAt={report.createdAt}
-                  updatedAt={report.updatedAt}
-                  costEstimate={report.costEstimate}
-                  currency={report.currency}
-                />
-              ))}
+              {reports
+                .filter(r => r.imageUrl && r.imageUrl.trim() !== "")
+                .slice(0, 3)
+                .map((report) => (
+                  <IssueCard
+                    key={report._id}
+                    title={report.title}
+                    description={report.description}
+                    location={report.location}
+                    status={report.status}
+                    daysAgo={Math.floor((new Date().getTime() - new Date(report.createdAt).getTime()) / (1000 * 60 * 60 * 24))}
+                    progress={report.progress ?? (report.status === 'completed' ? 100 : report.status === 'in-progress' ? 50 : 10)}
+                    id={report._id}
+                    imageUrl={report.imageUrl}
+                    country={report.country}
+                    createdAt={report.createdAt}
+                    updatedAt={report.updatedAt}
+                    costEstimate={report.costEstimate}
+                    currency={report.currency}
+                  />
+                ))}
             </div>
           )}
 
@@ -215,14 +218,27 @@ export default function Home() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
-                className="relative h-[300px] rounded-lg overflow-hidden shadow-xl"
+                className="relative h-[300px] rounded-lg overflow-hidden shadow-xl flex items-center justify-center bg-gradient-to-br from-teal-100 to-emerald-100"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-teal-500/20 to-emerald-500/20 z-10"></div>
                 <img
                   src="/community.jpg?height=300&width=500"
                   alt="Community members working together"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover z-20"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    const fallback = document.getElementById('community-fallback');
+                    if (fallback) fallback.style.display = 'flex';
+                  }}
                 />
+                <div
+                  id="community-fallback"
+                  className="hidden absolute inset-0 z-30 flex-col items-center justify-center text-teal-700"
+                  style={{ display: 'none' }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto mb-2" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-4.13a4 4 0 10-8 0 4 4 0 008 0zm6 4a4 4 0 00-3-3.87M6 10a4 4 0 013-3.87" /></svg>
+                  <span className="block text-center text-lg font-semibold">Community image unavailable</span>
+                </div>
               </motion.div>
             </div>
           </div>
