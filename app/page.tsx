@@ -1,62 +1,17 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { ChevronRight, MapPin, PenToolIcon as Tool, UserCog, Users } from "lucide-react"
 import { IssueCard } from "@/components/issue-card"
-
-interface Report {
-  _id: string;
-  title: string;
-  description: string;
-  location: string;
-  status: "urgent" | "pending" | "in-progress" | "bidding" | "completed";
-  createdAt: string;
-  updatedAt: string;
-  progress?: number;
-  assignedContractor?: string;
-  imageUrl?: string;
-  country: string;
-  costEstimate?: {
-    min: number;
-    max: number;
-  };
-  currency?: string;
-  ratings?: number[];
-}
+import { useReports } from "@/hooks/useReports"
+import { Report } from "@/types"
 
 export default function Home() {
   const [isHovered, setIsHovered] = useState(false)
-  const [reports, setReports] = useState<Report[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        const reportsResponse = await fetch('/api/reports')
-        if (!reportsResponse.ok) {
-          const errorData = await reportsResponse.json()
-          throw new Error(errorData.error || 'Failed to fetch reports')
-        }
-        const reportsData = await reportsResponse.json()
-        console.log('Dashboard reportsData:', reportsData)
-        const reportsWithRatings = reportsData.map((report: Report) => ({
-          ...report,
-          ratings: Array.isArray(report.ratings) ? report.ratings : [],
-        }))
-        setReports(reportsWithRatings)
-        setError(null)
-      } catch (error) {
-        setError(error instanceof Error ? error.message : 'Failed to fetch reports')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchReports()
-  }, [])
+  const { reports, loading, error } = useReports({ limit: 3 })
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-teal-50 to-white">
@@ -198,7 +153,7 @@ export default function Home() {
             <div className="text-center py-8 text-gray-500">No issues found.</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {reports.filter(r => r.imageUrl && r.imageUrl.trim() !== "").slice(0, 3).map((report) => (
+              {reports.filter(r => r.imageUrl && r.imageUrl.trim() !== "").map((report) => (
                 <IssueCard
                   key={report._id}
                   title={report.title}
@@ -250,38 +205,24 @@ export default function Home() {
                   </div>
                   <div className="bg-white p-4 rounded-lg shadow-sm">
                     <h3 className="font-semibold mb-2 text-teal-700">For Contractors</h3>
-                    <p className="text-sm text-gray-600">Bid on projects and build your reputation</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h3 className="font-semibold mb-2 text-teal-700">For Officials</h3>
-                    <p className="text-sm text-gray-600">Manage issues and monitor contractor performance</p>
-                  </div>
-                  <div className="bg-white p-4 rounded-lg shadow-sm">
-                    <h3 className="font-semibold mb-2 text-teal-700">For Communities</h3>
-                    <p className="text-sm text-gray-600">Transparent process and better infrastructure</p>
+                    <p className="text-sm text-gray-600">Find projects, submit bids, and manage your work</p>
                   </div>
                 </div>
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.6 }}
                 viewport={{ once: true }}
-                className="bg-white p-8 rounded-lg shadow-lg"
+                className="relative h-[300px] rounded-lg overflow-hidden shadow-xl"
               >
-                <h3 className="text-2xl font-bold text-gray-800 mb-6">Register Now</h3>
-                <div className="space-y-4">
-                  <Button asChild className="w-full bg-teal-600 hover:bg-teal-700">
-                    <Link href="/register/citizen">Register as Citizen</Link>
-                  </Button>
-                  <Button asChild className="w-full bg-emerald-600 hover:bg-emerald-700">
-                    <Link href="/register/contractor">Register as Contractor</Link>
-                  </Button>
-                  <Button asChild className="w-full bg-cyan-600 hover:bg-cyan-700">
-                    <Link href="/register/official">Register as Government Official</Link>
-                  </Button>
-                </div>
+                <div className="absolute inset-0 bg-gradient-to-br from-teal-500/20 to-emerald-500/20 z-10"></div>
+                <img
+                  src="/community.jpg?height=300&width=500"
+                  alt="Community members working together"
+                  className="w-full h-full object-cover"
+                />
               </motion.div>
             </div>
           </div>

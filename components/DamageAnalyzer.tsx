@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,15 @@ import { Textarea } from "@/components/ui/textarea";
 import Image from "next/image";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Loader2, CheckCircle2, MapPin } from "lucide-react";
+import dynamic from 'next/dynamic';
+import 'leaflet/dist/leaflet.css';
+import type { LatLngExpression } from 'leaflet';
+
+// Dynamically import Leaflet components with SSR disabled
+const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
+const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
+const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
+const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false });
 
 const COUNTRIES = [
   'United States', 'Canada', 'Mexico', 'Brazil', 'Argentina', 'Colombia', 'Peru', 'Chile',
@@ -20,6 +29,28 @@ const COUNTRIES = [
   'United Arab Emirates', 'Qatar', 'Kuwait', 'Israel', 'Turkey', 'South Africa',
   'Egypt', 'Nigeria', 'Kenya', 'Ethiopia', 'Australia', 'New Zealand'
 ];
+
+// Add this function to get coordinates for a location
+const getCoordinates = (location: string, country: string) => {
+  // This is a simple fallback - in a real app, you'd use a geocoding service
+  const countryCoords: Record<string, [number, number]> = {
+    'United States': [37.0902, -95.7129],
+    'Canada': [56.1304, -106.3468],
+    'United Kingdom': [55.3781, -3.4360],
+    'India': [20.5937, 78.9629],
+    'Australia': [-25.2744, 133.7751],
+    'Kenya': [-1.2921, 36.8219],
+    'Nigeria': [9.0820, 8.6753],
+    'South Africa': [-30.5595, 22.9375],
+    'Germany': [51.1657, 10.4515],
+    'France': [46.6034, 1.8883],
+    'Brazil': [-14.2350, -51.9253],
+    'Mexico': [23.6345, -102.5528],
+    'Unknown': [0, 0],
+  };
+
+  return countryCoords[country] || countryCoords['Unknown'];
+};
 
 export default function DamageAnalyzer() {
   const [country, setCountry] = useState('');
@@ -43,6 +74,21 @@ export default function DamageAnalyzer() {
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  const icon = useMemo(() => {
+    if (typeof window === 'undefined') return undefined;
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const L = require('leaflet');
+    return L.icon({
+      iconUrl: '/marker-icon.png',
+      iconRetinaUrl: '/marker-icon-2x.png',
+      shadowUrl: '/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
@@ -120,7 +166,7 @@ export default function DamageAnalyzer() {
         currency: result.currency
       };
 
-      console.log('Saving report with data:', reportData);
+      // console.log('Saving report with data:', reportData);
 
       const saveResponse = await fetch('/api/reports', {
         method: 'POST',
@@ -141,7 +187,7 @@ export default function DamageAnalyzer() {
       }
 
       const savedReport = await saveResponse.json();
-      console.log('Report saved successfully:', savedReport);
+      // console.log('Report saved successfully:', savedReport);
       setSuccess(true);
       
       // Redirect to reports page after 2 seconds
@@ -149,7 +195,7 @@ export default function DamageAnalyzer() {
         window.location.href = '/report';
       }, 2000);
     } catch (error) {
-      console.error('Detailed error:', error);
+      // console.error('Detailed error:', error);
       setError(error instanceof Error ? error.message : 'Failed to save report. Please try again.');
     } finally {
       setSubmitting(false);
@@ -275,11 +321,26 @@ export default function DamageAnalyzer() {
                 </div>
               </div>
 
-              <div className="rounded-md overflow-hidden border border-gray-200 h-[200px] bg-gray-100 flex items-center justify-center">
-                <div className="text-center p-4">
-                  <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">Map showing: {result.location}</p>
-                </div>
+              <div className="rounded-md overflow-hidden border border-gray-200 h-[300px]">
+                <MapContainer
+                  center={getCoordinates(result.location, result.country) as LatLngExpression}
+                  zoom={5}
+                  style={{ height: '100%', width: '100%' }}
+                  className="z-0"
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <Marker position={getCoordinates(result.location, result.country) as LatLngExpression} icon={icon}>
+                    <Popup>
+                      <div>
+                        <strong>{result.title}</strong><br />
+                        {result.location}
+                      </div>
+                    </Popup>
+                  </Marker>
+                </MapContainer>
               </div>
 
               <div className="flex gap-4">

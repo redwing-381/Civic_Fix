@@ -6,15 +6,23 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertCircle, CheckCircle2 } from "lucide-react"
+import { submitRating } from "@/lib/api"
 
+/**
+ * Props for the RatingSystem component
+ */
 interface RatingSystemProps {
-  reportId: string
-  userId: string
-  currentRating?: number
-  currentComment?: string
-  onRatingSubmit?: () => void
+  reportId: string                // ID of the report being rated
+  userId: string                  // ID of the user submitting the rating
+  currentRating?: number          // Current rating if editing
+  currentComment?: string         // Current comment if editing
+  onRatingSubmit?: () => void     // Callback when rating is submitted
 }
 
+/**
+ * Component for submitting and displaying ratings
+ * Allows users to rate issues and provide optional comments
+ */
 export function RatingSystem({
   reportId,
   userId,
@@ -22,6 +30,7 @@ export function RatingSystem({
   currentComment,
   onRatingSubmit
 }: RatingSystemProps) {
+  // State management
   const [rating, setRating] = useState(currentRating || 0)
   const [comment, setComment] = useState(currentComment || "")
   const [hover, setHover] = useState(0)
@@ -29,7 +38,12 @@ export function RatingSystem({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
+  /**
+   * Handles the submission of a rating
+   * Validates the rating and submits to the server
+   */
   const handleSubmit = async () => {
+    // Validate rating
     if (!rating) {
       setError("Please select a rating")
       return
@@ -38,38 +52,27 @@ export function RatingSystem({
     setLoading(true)
     setError(null)
 
-    try {
-      const response = await fetch("/api/reports", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          reportId,
-          userId,
-          rating,
-          comment: comment.trim(),
-        }),
-      })
+    // Submit rating to server
+    const { error: submitError } = await submitRating(
+      reportId,
+      userId,
+      rating,
+      comment.trim()
+    )
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to submit rating")
-      }
-
+    if (submitError) {
+      setError(submitError)
+    } else {
       setSuccess(true)
-      if (onRatingSubmit) {
-        onRatingSubmit()
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to submit rating")
-    } finally {
-      setLoading(false)
+      onRatingSubmit?.()
     }
+
+    setLoading(false)
   }
 
   return (
     <div className="space-y-4">
+      {/* Star rating input */}
       <div className="flex items-center gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
           <button
@@ -91,6 +94,7 @@ export function RatingSystem({
         ))}
       </div>
 
+      {/* Comment input */}
       <Textarea
         placeholder="Add a comment (optional)"
         value={comment}
@@ -98,6 +102,7 @@ export function RatingSystem({
         className="min-h-[100px]"
       />
 
+      {/* Error message */}
       {error && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
@@ -106,6 +111,7 @@ export function RatingSystem({
         </Alert>
       )}
 
+      {/* Success message */}
       {success && (
         <Alert>
           <CheckCircle2 className="h-4 w-4" />
@@ -114,6 +120,7 @@ export function RatingSystem({
         </Alert>
       )}
 
+      {/* Submit button */}
       <Button
         onClick={handleSubmit}
         disabled={loading || success}

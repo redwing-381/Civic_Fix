@@ -2,18 +2,26 @@
 
 import { motion } from "framer-motion"
 import { MapPin, Clock, AlertTriangle, CheckCircle2, Loader2, Calendar, DollarSign, Star } from "lucide-react"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { useState } from "react"
 import { RatingSystem } from "@/components/rating-system"
+import { Report, Rating, StatusDetails } from "@/types"
+import { STATUS_COLORS, DEFAULT_IMAGE } from "@/lib/constants"
+import { calculateAverageRating, getDaysAgo, normalizeProgress, formatCurrency } from "@/lib/utils"
+import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 
+/**
+ * Props for the IssueCard component
+ */
 interface IssueCardProps {
   title: string
   description: string
   location: string
-  status: "urgent" | "pending" | "in-progress" | "bidding" | "completed"
+  status: Report["status"]
   daysAgo: number
   progress: number
   id?: string
@@ -21,17 +29,9 @@ interface IssueCardProps {
   country?: string
   createdAt?: string
   updatedAt?: string
-  costEstimate?: {
-    min: number
-    max: number
-  }
+  costEstimate?: Report["costEstimate"]
   currency?: string
-  ratings?: Array<{
-    userId: string
-    rating: number
-    comment?: string
-    createdAt: string
-  }>
+  ratings?: Rating[]
   currentUserId?: string
   onRatingSubmit?: () => void
   canRate?: boolean
@@ -41,6 +41,10 @@ interface IssueCardProps {
   linkClassName?: string
 }
 
+/**
+ * Component for displaying an issue report card
+ * Shows issue details, status, progress, and allows rating
+ */
 export function IssueCard({ 
   title, 
   description, 
@@ -67,85 +71,61 @@ export function IssueCard({
   const [showDetails, setShowDetails] = useState(false);
   const [showRating, setShowRating] = useState(false);
 
-  // Calculate average rating
-  const averageRating = ratings.length > 0
-    ? (ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(1)
-    : null;
-
-  // Check if current user has rated
+  const averageRating = calculateAverageRating(ratings);
   const userRating = currentUserId ? ratings.find(r => r.userId === currentUserId) : null;
+  const normalizedProgress = normalizeProgress(progress);
 
-  // Log the received progress value
-  console.log(`IssueCard ${title} received progress:`, progress);
+  const getStatusDetails = (): StatusDetails => {
+    const statusConfig = {
+      urgent: {
+        icon: <AlertTriangle className="h-4 w-4" />,
+        label: "Urgent",
+        color: STATUS_COLORS.urgent,
+      },
+      pending: {
+        icon: <Clock className="h-4 w-4" />,
+        label: "Pending",
+        color: STATUS_COLORS.pending,
+      },
+      "in-progress": {
+        icon: <Loader2 className="h-4 w-4" />,
+        label: "In Progress",
+        color: STATUS_COLORS["in-progress"],
+      },
+      bidding: {
+        icon: <Loader2 className="h-4 w-4" />,
+        label: "Bidding",
+        color: STATUS_COLORS.bidding,
+      },
+      completed: {
+        icon: <CheckCircle2 className="h-4 w-4" />,
+        label: "Completed",
+        color: STATUS_COLORS.completed,
+      },
+    };
 
-  const getStatusDetails = () => {
-    switch (status) {
-      case "urgent":
-        return {
-          icon: <AlertTriangle className="h-4 w-4" />,
-          label: "Urgent",
-          color: "text-red-500 bg-red-50",
-        }
-      case "pending":
-        return {
-          icon: <Clock className="h-4 w-4" />,
-          label: "Pending",
-          color: "text-amber-500 bg-amber-50",
-        }
-      case "in-progress":
-        return {
-          icon: <Loader2 className="h-4 w-4" />,
-          label: "In Progress",
-          color: "text-blue-500 bg-blue-50",
-        }
-      case "bidding":
-        return {
-          icon: <Loader2 className="h-4 w-4" />,
-          label: "Bidding",
-          color: "text-purple-500 bg-purple-50",
-        }
-      case "completed":
-        return {
-          icon: <CheckCircle2 className="h-4 w-4" />,
-          label: "Completed",
-          color: "text-green-500 bg-green-50",
-        }
-      default:
-        return {
-          icon: <Clock className="h-4 w-4" />,
-          label: "Pending",
-          color: "text-gray-500 bg-gray-50",
-        }
-    }
+    return statusConfig[status] || statusConfig.pending;
   }
 
-  const statusDetails = getStatusDetails()
-
-  // Ensure progress is a number between 0 and 100
-  const normalizedProgress = Math.min(Math.max(Number(progress) || 0, 0), 100);
-  console.log(`IssueCard ${title} normalized progress:`, normalizedProgress);
+  const statusDetails = getStatusDetails();
 
   return (
     <>
       <motion.div whileHover={{ y: -5 }} transition={{ duration: 0.2 }}>
-        <Card className="h-full flex flex-col">
-          <div className="h-40 bg-gray-100 relative">
-            <img
-              src={imageUrl || "/avatar.png"}
-              alt={title}
-              className="w-full h-full object-cover"
-            />
-            <div
-              className={`absolute top-2 right-2 ${statusDetails.color} flex items-center gap-1 py-1 px-2 rounded-full text-xs font-medium`}
-            >
-              {statusDetails.icon}
-              {statusDetails.label}
+        <Card className={cn("h-full flex flex-col", className)}>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl font-semibold">
+                {title}
+              </CardTitle>
+              <Badge variant="secondary" className={statusDetails.color}>
+                {statusDetails.icon} {statusDetails.label}
+              </Badge>
             </div>
-          </div>
+          </CardHeader>
           <CardContent className="flex-1 pt-4">
-            <h3 className="font-semibold text-gray-800 mb-1">{title}</h3>
-            <p className="text-sm text-gray-600 mb-2 line-clamp-2">{description}</p>
-            <div className="flex items-center text-gray-500 text-xs mb-3">
+            <p className={`text-sm text-gray-600 mb-2 line-clamp-2 ${descriptionClassName}`}>{description}</p>
+            <div className={`flex items-center text-gray-500 text-xs mb-3 ${locationClassName}`}>
               <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
               <span className="truncate">{location}</span>
             </div>
@@ -164,7 +144,7 @@ export function IssueCard({
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-teal-600 hover:text-teal-700 p-0"
+              className={`text-teal-600 hover:text-teal-700 p-0 ${linkClassName}`}
               onClick={() => setShowDetails(true)}
             >
               View Details
@@ -227,7 +207,7 @@ export function IssueCard({
                       <div className="flex justify-between">
                         <span className="text-gray-500">Estimated Cost</span>
                         <span className="font-medium">
-                          {currency || '$'}{costEstimate.min} - {currency || '$'}{costEstimate.max}
+                          {formatCurrency(costEstimate.min, currency)} - {formatCurrency(costEstimate.max, currency)}
                         </span>
                       </div>
                     )}
@@ -246,20 +226,43 @@ export function IssueCard({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Calendar className="h-4 w-4" />
-                  <span>Created: {createdAt ? new Date(createdAt).toLocaleDateString() : '-'}</span>
+              {averageRating !== null && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Ratings</h4>
+                  <div className="flex items-center gap-2">
+                    <Star className="h-4 w-4 text-yellow-400" />
+                    <span className="text-sm font-medium">{averageRating}</span>
+                    <span className="text-sm text-gray-500">({ratings.length} ratings)</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-gray-500">
-                  <Clock className="h-4 w-4" />
-                  <span>Updated: {updatedAt ? new Date(updatedAt).toLocaleDateString() : '-'}</span>
+              )}
+
+              {canRate && !userRating && (
+                <div className="pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowRating(true)}
+                  >
+                    Rate This Issue
+                  </Button>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      {showRating && currentUserId && (
+        <RatingSystem
+          reportId={id}
+          userId={currentUserId}
+          onRatingSubmit={() => {
+            setShowRating(false);
+            onRatingSubmit?.();
+          }}
+        />
+      )}
     </>
   )
 }
