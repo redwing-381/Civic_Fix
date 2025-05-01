@@ -108,7 +108,7 @@ function DashboardContent() {
         <main className="flex-1 p-4 md:p-6 overflow-auto bg-background text-foreground">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back, John Doe</p>
+            <p className="text-muted-foreground">Welcome back, Solai</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

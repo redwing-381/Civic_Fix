@@ -50,7 +50,7 @@ export default function IssueDetail({ params }: { params: Promise<{ id: string }
     severity: "Medium",
     location: "123 Main Street, Downtown",
     landmark: "Near City Park entrance",
-    reportedBy: "John Doe",
+    reportedBy: "Solai",
     reportedAt: "May 10, 2023",
     assignedTo: "ABC Construction",
     estimatedCost: "$1,200 - $1,500",
@@ -66,7 +66,7 @@ export default function IssueDetail({ params }: { params: Promise<{ id: string }
         date: "May 10, 2023",
         time: "09:15 AM",
         title: "Issue Reported",
-        description: "Issue was reported by John Doe",
+        description: "Issue was reported by Solai",
         icon: <FileText className="h-4 w-4" />,
       },
       {
