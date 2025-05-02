@@ -231,28 +231,32 @@ export default function AboutPage() {
               <section>
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">Our Team</h2>
                 <p className="text-gray-600 mb-6">
-                  CivicFix was founded by a team of urban planners, software engineers, and former government officials
-                  who saw the need for a better way to address infrastructure issues in communities. Our diverse team
-                  brings together expertise in public administration, technology, and community engagement.
+                  CivicFix is powered by a team of passionate Computer Science students who combine their expertise in AI/ML and software development to create innovative solutions for community infrastructure. Our team brings together diverse technical skills and a shared vision for improving civic engagement through technology.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                   {[
                     {
-                      name: "Sarah Johnson",
-                      role: "Founder & CEO",
-                      bio: "Former urban planner with 15 years of experience in local government.",
+                      name: "Merlyn",
+                      role: "AI/ML Specialist",
+                      bio: "Expert in machine learning and data analysis, focusing on intelligent issue classification and prediction.",
                       avatar: "/avatar.png",
                     },
                     {
-                      name: "Michael Chen",
-                      role: "CTO",
-                      bio: "Software engineer with a passion for civic technology and open data.",
+                      name: "Khalid",
+                      role: "Software Developer",
+                      bio: "Full-stack developer with expertise in building scalable web applications and APIs.",
                       avatar: "/avatar.png",
                     },
                     {
-                      name: "Robert Smith",
-                      role: "COO",
-                      bio: "Former public works director with expertise in infrastructure management.",
+                      name: "Sasidharan",
+                      role: "Software Engineer",
+                      bio: "Specialized in system architecture and backend development, ensuring robust infrastructure.",
+                      avatar: "/avatar.png",
+                    },
+                    {
+                      name: "Solai",
+                      role: "Software Developer",
+                      bio: "Frontend specialist with a focus on creating intuitive user interfaces and seamless user experiences.",
                       avatar: "/avatar.png",
                     },
                   ].map((person, index) => (
