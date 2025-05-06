@@ -62,9 +62,37 @@ type CurrencyApiResponse = {
 };
 
 // Simple cost model with more reasonable base cost
-function estimateCost(): number {
-  // Base cost for typical damage repair (reduced from 5000 to 1000)
-  return 1000;
+function estimateCost(title: string, description: string): { min: number; max: number } {
+  const text = `${title} ${description}`.toLowerCase();
+
+  // Define ranges for each damage type
+  const ranges: Record<string, [number, number]> = {
+    pothole: [400, 900],
+    streetlight: [200, 500],
+    sanitation: [100, 400],
+    electrical: [300, 700],
+    road: [600, 1200],
+    water: [500, 1000],
+    drainage: [600, 1100],
+    'public property': [700, 1300],
+    default: [500, 1500],
+  };
+
+  let selectedRange = ranges.default;
+  for (const key of Object.keys(ranges)) {
+    if (key !== 'default' && text.includes(key)) {
+      selectedRange = ranges[key];
+      break;
+    }
+  }
+
+  // Generate a random base cost within the selected range
+  const baseCost = Math.floor(Math.random() * (selectedRange[1] - selectedRange[0] + 1)) + selectedRange[0];
+
+  return {
+    min: Math.round(baseCost * 0.85),
+    max: Math.round(baseCost * 1.15),
+  };
 }
 
 // Function to convert currency
@@ -98,20 +126,19 @@ export async function POST(request: Request) {
     // Get currency for the country
     const currency = countryCurrencyMap[country] || 'USD';
 
-    // Calculate base cost in USD
-    const baseCostUSD = estimateCost();
+    // Calculate cost range in USD based on title and description
+    const costRangeUSD = estimateCost(title, description);
 
     // Convert to local currency if needed
-    let finalCost;
+    let finalCostRange;
     if (currency !== 'USD') {
-      finalCost = await convertCurrency(baseCostUSD, 'USD', currency);
+      finalCostRange = {
+        min: await convertCurrency(costRangeUSD.min, 'USD', currency),
+        max: await convertCurrency(costRangeUSD.max, 'USD', currency)
+      };
     } else {
-      finalCost = baseCostUSD;
+      finalCostRange = costRangeUSD;
     }
-
-    // Add 15% buffer for min/max range (reduced from 20%)
-    const costMin = Math.round(finalCost * 0.85);
-    const costMax = Math.round(finalCost * 1.15);
 
     const result = {
       title,
@@ -119,13 +146,12 @@ export async function POST(request: Request) {
       country,
       currency,
       costEstimate: {
-        min: costMin,
-        max: costMax
+        min: Math.round(finalCostRange.min),
+        max: Math.round(finalCostRange.max)
       }
     };
 
     return NextResponse.json(result);
-
   } catch (error) {
     console.error('Error processing request:', error);
     return NextResponse.json({ 
